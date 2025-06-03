@@ -10,15 +10,15 @@
 <body>
     <header>
         <div class="logo-container">
-            <img src="LogoProyecto.jpg" alt="Logo ERXIDI" class="logo">
+            <img th:src="@{/img/LogoProyecto.jpg}" alt="Logo ERXIDI" class="logo">
         </div>
         <h1> ERXIDI - ALQUILER DE BICICLETAS</h1>
         <nav>
             <ul>
-                <li><a href="Principal.html">Inicio</a></li>
-                <li><a href="ModeBici.html">Modelos de Bicicletas</a></li>
-                <li><a href="Reser-Alqui.html">Reservas o Alquilar</a></li>
-                <li><a href="#Historial">Historial de alquileres</a></li>
+               <li><a th:href="@{Principal}">Inicio</a></li>
+                <li><a th:href="@{ModeBici}">Modelos de Bicicletas</a></li>
+                <li><a th:href="@{Reser-Alqui}">Reservas o Alquiler</a></li>
+                <li><a th:href="@{Historial-Alqui}">Historial de alquileres</a></li>
             </ul>
         </nav>
     </header>
@@ -28,19 +28,19 @@
             <div class="carrusel">
                 <div class="carrusel-slides">
                     <div class="slide active">
-                        <img src="BiciMont.jpg" alt="Bicicleta de montaña">
+                        <img th:src="@{/img/BiciMont.jpg}" alt="Bicicleta de montaña">
                         <div class="slide-caption">Bicicletas de Montaña</div>
                     </div>
                     <div class="slide">
-                        <img src="BiciMara.jpg" alt="Bicicleta de competir">
+                        <img th:src="@{/img/BiciMara.jpg}" alt="Bicicleta de competir">
                         <div class="slide-caption">Bicicletas para Competir</div>
                     </div>
                     <div class="slide">
-                        <img src="BiciEnseñando.jpg" alt="Bicicleta para niños">
+                        <img th:src="@{/img/BiciEnseñando.jpg}" alt="Bicicleta para niños">
                         <div class="slide-caption">Bicicletas para Niños</div>
                     </div>
                     <div class="slide">
-                        <img src="BiciPlaya.jpg" alt="Bicicleta de paseo">
+                        <img th:src="@{/img/BiciPlaya.jpg}" alt="Bicicleta de paseo">
                         <div class="slide-caption">Bicicletas de Paseo </div>
                     </div>
                 </div>

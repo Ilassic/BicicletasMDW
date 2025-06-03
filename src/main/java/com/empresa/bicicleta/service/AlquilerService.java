@@ -1,5 +1,5 @@
 package com.empresa.bicicleta.service;
 
-public class Alquiler {
+public class AlquilerService {
     
 }

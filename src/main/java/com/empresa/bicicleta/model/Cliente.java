@@ -1,6 +1,6 @@
 package com.empresa.bicicleta.model;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -29,6 +29,5 @@ public class Cliente {
 
     private String contrasena;
 
-    private Date fecha_registro;
-  
+    private LocalDateTime fecha_registro;
 }
