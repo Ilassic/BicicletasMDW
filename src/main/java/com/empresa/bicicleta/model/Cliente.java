@@ -29,5 +29,7 @@ public class Cliente {
 
     private String contrasena;
 
-    private LocalDateTime fecha_registro;
+    @Column(name = "fecha_registro")
+    private LocalDateTime fechaRegistro;
+    
 }
