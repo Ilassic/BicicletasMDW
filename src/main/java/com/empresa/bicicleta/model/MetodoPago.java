@@ -1,7 +1,6 @@
 package com.empresa.bicicleta.model;
 
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -18,10 +17,9 @@ public class MetodoPago {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_metodo_pago")
+
     private Integer id;
 
-    @Column(name = "tipo_pago")
     private String tipoPago;
 
     private String descripcion;

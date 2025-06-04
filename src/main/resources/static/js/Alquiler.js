@@ -39,15 +39,15 @@ document.addEventListener('DOMContentLoaded', function() {
     let formData = JSON.parse(localStorage.getItem('reservaFormData')) || {};
     function guardarDatos() {
         formData = {
-             nombre: nombreInput ? nombreInput.value : '',
-             apellidos: apellidosInput ? apellidosInput.value : '',
-             dni: dniInput ? dniInput.value : '',
-             telefono: telefonoInput ? telefonoInput.value : '',
-             email: emailInput ? emailInput.value : '',
-             fecha: fechaInput ? fechaInput.value : '',
-             hora: horaInput ? horaInput.value : '',
-             modelo: modeloSelect ? modeloSelect.value : '',
-             duracion: duracionInput ? duracionInput.value : ''
+            nombre: nombreInput ? nombreInput.value : '',
+            apellidos: apellidosInput ? apellidosInput.value : '',
+            dni: dniInput ? dniInput.value : '',
+            telefono: telefonoInput ? telefonoInput.value : '',
+            email: emailInput ? emailInput.value : '',
+            fecha: fechaInput ? fechaInput.value : '',
+            hora: horaInput ? horaInput.value : '',
+            modelo: modeloSelect ? modeloSelect.value : '',
+            duracion: duracionInput ? duracionInput.value : ''
         };
         for (const radio of metodosPagoRadios) { if (radio.checked) formData.metodoPago = radio.value; }
         localStorage.setItem('reservaFormData', JSON.stringify(formData));

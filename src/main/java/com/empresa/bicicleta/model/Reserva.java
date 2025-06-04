@@ -4,8 +4,14 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+
+import com.empresa.bicicleta.enums.EstadoPago;
+import com.empresa.bicicleta.enums.EstadoReserva;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -33,24 +39,20 @@ public class Reserva {
     @ManyToOne
     @JoinColumn(name = "codigo_bicicleta")
     private Bicicleta bicicleta;
-
-    @Column(name = "fecha_reserva")
+    
     private Date fechaReserva;
-
-    @Column(name = "hora_reserva")
+    
     private Time horaReserva;
 
-    @Column(name = "duracion_horas")
     private Integer duracionHoras;
 
-    @Column(name = "metodo_pago")
-    private String metodoPago;
+    @Enumerated(EnumType.STRING)
+    private EstadoPago estadoPago;
 
-    @Column(name = "precio_total")
     private BigDecimal precioTotal;
 
-    private String estado;
+    @Enumerated(EnumType.STRING)
+    private EstadoReserva estadoReserva;
 
-    @Column(name = "fecha_registro")
     private Timestamp fechaRegistro;
 }

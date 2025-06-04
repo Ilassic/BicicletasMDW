@@ -1,6 +1,5 @@
 package com.empresa.bicicleta.model;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -19,17 +18,15 @@ public class DetalleAlquiler {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_detalle")
+
     private Integer id;
 
     @ManyToOne
-    @JoinColumn(name = "id_alquiler")
     private Alquiler alquiler;
 
     @ManyToOne
     @JoinColumn(name = "codigo_bicicleta")
     private Bicicleta bicicleta;
 
-    @Column(name = "horas_reservadas")
     private Integer horasReservadas;
 }

@@ -12,6 +12,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.empresa.bicicleta.model.Reserva;
+import com.empresa.bicicleta.enums.EstadoReserva;
+import com.empresa.bicicleta.enums.EstadoPago;
 
 @Repository
 public interface ReservaRepository extends JpaRepository<Reserva, Integer>{
@@ -26,29 +28,33 @@ public interface ReservaRepository extends JpaRepository<Reserva, Integer>{
     List<Reserva> findByFechaReserva(Date fechaReserva);
     
     // Buscar reservas por estado
-    List<Reserva> findByEstado(String estado);
+    List<Reserva> findByEstadoReserva(EstadoReserva estadoReserva);
     
-    // Buscar reservas confirmadas
-    @Query("SELECT r FROM Reserva r WHERE r.estado = 'confirmada'")
-    List<Reserva> findReservasConfirmadas();
+    // Buscar reservas entregadas
+    @Query("SELECT r FROM Reserva r WHERE r.estadoReserva = 'ENTREGADO'")
+    List<Reserva> findReservasEntregadas();
     
     // Buscar reservas canceladas
-    @Query("SELECT r FROM Reserva r WHERE r.estado = 'cancelada'")
+    @Query("SELECT r FROM Reserva r WHERE r.estadoReserva = 'CANCELADO'")
     List<Reserva> findReservasCanceladas();
     
     // Buscar reservas completadas
-    @Query("SELECT r FROM Reserva r WHERE r.estado = 'completada'")
+    @Query("SELECT r FROM Reserva r WHERE r.estadoReserva = 'COMPLETADO'")
     List<Reserva> findReservasCompletadas();
     
-    // Buscar reservas por método de pago
-    List<Reserva> findByMetodoPago(String metodoPago);
+    // Buscar reservas pendientes
+    @Query("SELECT r FROM Reserva r WHERE r.estadoReserva = 'PENDIENTE'")
+    List<Reserva> findReservasPendientes();
+    
+    // Buscar reservas por estado de pago
+    List<Reserva> findByEstadoPago(EstadoPago estadoPago);
     
     // Buscar reservas pendientes de pago
-    @Query("SELECT r FROM Reserva r WHERE r.metodoPago = 'pendiente'")
+    @Query("SELECT r FROM Reserva r WHERE r.estadoPago = 'PENDIENTE'")
     List<Reserva> findReservasPendientesPago();
     
     // Buscar reservas pagadas
-    @Query("SELECT r FROM Reserva r WHERE r.metodoPago = 'pagado'")
+    @Query("SELECT r FROM Reserva r WHERE r.estadoPago = 'PAGADO'")
     List<Reserva> findReservasPagadas();
     
     // Buscar reservas en un rango de fechas
@@ -90,24 +96,24 @@ public interface ReservaRepository extends JpaRepository<Reserva, Integer>{
     List<Reserva> findByPrecioTotalLessThanEqual(BigDecimal precio);
     
     // Buscar reservas de un cliente por estado
-    @Query("SELECT r FROM Reserva r WHERE r.cliente.dni = :dniCliente AND r.estado = :estado")
-    List<Reserva> findByClienteDniAndEstado(
+    @Query("SELECT r FROM Reserva r WHERE r.cliente.dni = :dniCliente AND r.estadoReserva = :estadoReserva")
+    List<Reserva> findByClienteDniAndEstadoReserva(
         @Param("dniCliente") String dniCliente, 
-        @Param("estado") String estado
+        @Param("estadoReserva") EstadoReserva estadoReserva
     );
     
     // Buscar reservas de una bicicleta por estado
-    @Query("SELECT r FROM Reserva r WHERE r.bicicleta.codigoBicicleta = :codigoBicicleta AND r.estado = :estado")
-    List<Reserva> findByBicicletaCodigoAndEstado(
+    @Query("SELECT r FROM Reserva r WHERE r.bicicleta.codigoBicicleta = :codigoBicicleta AND r.estadoReserva = :estadoReserva")
+    List<Reserva> findByBicicletaCodigoAndEstadoReserva(
         @Param("codigoBicicleta") String codigoBicicleta, 
-        @Param("estado") String estado
+        @Param("estadoReserva") EstadoReserva estadoReserva
     );
     
     // Verificar disponibilidad de bicicleta en fecha y hora específica
     @Query("SELECT r FROM Reserva r WHERE r.bicicleta.codigoBicicleta = :codigoBicicleta " +
            "AND r.fechaReserva = :fechaReserva " +
            "AND r.horaReserva = :horaReserva " +
-           "AND r.estado IN ('confirmada', 'completada')")
+           "AND r.estadoReserva IN ('ENTREGADO', 'COMPLETADO')")
     List<Reserva> findConflictingReservas(
         @Param("codigoBicicleta") String codigoBicicleta,
         @Param("fechaReserva") Date fechaReserva,
@@ -121,12 +127,12 @@ public interface ReservaRepository extends JpaRepository<Reserva, Integer>{
     List<Reserva> findByFechaRegistroBefore(Timestamp fecha);
     
     // Contar reservas por estado
-    @Query("SELECT r.estado, COUNT(r) FROM Reserva r GROUP BY r.estado")
-    List<Object[]> countByEstado();
+    @Query("SELECT r.estadoReserva, COUNT(r) FROM Reserva r GROUP BY r.estadoReserva")
+    List<Object[]> countByEstadoReserva();
     
-    // Contar reservas por método de pago
-    @Query("SELECT r.metodoPago, COUNT(r) FROM Reserva r GROUP BY r.metodoPago")
-    List<Object[]> countByMetodoPago();
+    // Contar reservas por estado de pago
+    @Query("SELECT r.estadoPago, COUNT(r) FROM Reserva r GROUP BY r.estadoPago")
+    List<Object[]> countByEstadoPago();
     
     // Contar reservas por cliente
     @Query("SELECT r.cliente.dni, r.cliente.nombre, r.cliente.apellidos, COUNT(r) " +
@@ -147,7 +153,7 @@ public interface ReservaRepository extends JpaRepository<Reserva, Integer>{
            "ORDER BY año DESC, mes DESC")
     List<Object[]> countReservasPorMes();
 
-    // Buscar reservas activas (confirmadas) para hoy
-    @Query("SELECT r FROM Reserva r WHERE r.fechaReserva = CURRENT_DATE AND r.estado = 'confirmada'")
+    // Buscar reservas activas (entregadas) para hoy
+    @Query("SELECT r FROM Reserva r WHERE r.fechaReserva = CURRENT_DATE AND r.estadoReserva = 'ENTREGADO'")
     List<Reserva> findReservasActivasHoy();    
 }
