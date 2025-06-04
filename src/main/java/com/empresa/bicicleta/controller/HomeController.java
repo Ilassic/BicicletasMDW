@@ -12,4 +12,17 @@ public class HomeController {
         return "Principal";
     }
     
+    @GetMapping("/modelos")
+    public String getModelos() {
+        return "ModeBici";
+    }
+    @GetMapping("/reservas-bicicletas")
+    public String getReservas() {
+        return "Reser-Alqui";
+    }
+    @GetMapping("/mi-historial")
+    public String getHistorial() {
+        return "Historial-Alq";
+    }
+
 }

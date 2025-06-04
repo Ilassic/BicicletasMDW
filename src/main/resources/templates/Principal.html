@@ -15,10 +15,10 @@
         <h1> ERXIDI - ALQUILER DE BICICLETAS</h1>
         <nav>
             <ul>
-               <li><a th:href="@{Principal}">Inicio</a></li>
-                <li><a th:href="@{ModeBici}">Modelos de Bicicletas</a></li>
-                <li><a th:href="@{Reser-Alqui}">Reservas o Alquiler</a></li>
-                <li><a th:href="@{Historial-Alqui}">Historial de alquileres</a></li>
+               <li><a th:href="@{/}">Inicio</a></li>
+                <li><a th:href="@{/modelos}">Modelos de Bicicletas</a></li>
+                <li><a th:href="@{/reservas-bicicletas}">Reservas o Alquiler</a></li>
+                <li><a th:href="@{/mi-historial}">Historial de alquileres</a></li>
             </ul>
         </nav>
     </header>
@@ -92,6 +92,6 @@
     <footer>
         <p>&copy; 2025 ERXIDI E.I.R.L - Todos los derechos reservados</p>
     </footer>
-    <script th:href ="@{/js/Principal.js}"></script>
+    <script th:src ="@{/js/Principal.js}"></script>
 </body>
 </html>
