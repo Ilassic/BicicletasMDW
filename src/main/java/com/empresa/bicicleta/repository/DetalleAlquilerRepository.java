@@ -2,88 +2,62 @@ package com.empresa.bicicleta.repository;
 
 import java.util.List;
 import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.empresa.bicicleta.model.DetalleAlquiler;
-import com.empresa.bicicleta.model.Alquiler;
-import com.empresa.bicicleta.model.Bicicleta;
 
 @Repository
 public interface DetalleAlquilerRepository extends JpaRepository<DetalleAlquiler, Integer>{
-
-    // Buscar por ID de alquiler
-    List<DetalleAlquiler> findByAlquiler_Id(Integer idAlquiler);
     
-    // Buscar por alquiler
-    List<DetalleAlquiler> findByAlquiler(Alquiler alquiler);
+    // Buscar detalles por ID de alquiler
+    List<DetalleAlquiler> findByAlquilerId(Integer idAlquiler);
     
-    // Buscar por código de bicicleta
-    List<DetalleAlquiler> findByBicicleta_CodigoBicicleta(String codigoBicicleta);
-    
-    // Buscar por bicicleta
-    List<DetalleAlquiler> findByBicicleta(Bicicleta bicicleta);
-    
-    // Buscar por horas reservadas
-    List<DetalleAlquiler> findByHorasReservadas(Integer horasReservadas);
-    
-    // Buscar por rango de horas reservadas
-    List<DetalleAlquiler> findByHorasReservadasBetween(Integer horasMinimas, Integer horasMaximas);
-    
-    // Buscar por horas reservadas mayor o igual
-    List<DetalleAlquiler> findByHorasReservadasGreaterThanEqual(Integer horas);
-    
-    // Buscar por horas reservadas menor o igual
-    List<DetalleAlquiler> findByHorasReservadasLessThanEqual(Integer horas);
+    // Buscar detalles por código de bicicleta
+    List<DetalleAlquiler> findByBicicletaCodigoBicicletaOrderByIdDesc(String codigoBicicleta);
     
     // Buscar detalle específico por alquiler y bicicleta
-    Optional<DetalleAlquiler> findByAlquilerAndBicicleta(Alquiler alquiler, Bicicleta bicicleta);
+    Optional<DetalleAlquiler> findByAlquilerIdAndBicicletaCodigoBicicleta(Integer idAlquiler, String codigoBicicleta);
     
-    // Buscar por ID de alquiler y código de bicicleta
-    Optional<DetalleAlquiler> findByAlquiler_IdAndBicicleta_CodigoBicicleta(
-        Integer idAlquiler, String codigoBicicleta);
+    // Buscar detalles por cliente a través del alquiler
+    @Query("SELECT da FROM DetalleAlquiler da WHERE da.alquiler.reserva.cliente.dni = :dni ORDER BY da.id DESC")
+    List<DetalleAlquiler> findDetallesByCliente(@Param("dni") String dniCliente);
+    
+    // Buscar detalles por horas reservadas específicas
+    List<DetalleAlquiler> findByHorasReservadas(Integer horasReservadas);
+    
+    // Buscar detalles en rango de horas
+    List<DetalleAlquiler> findByHorasReservadasBetween(Integer horasMin, Integer horasMax);
+    
+    // Contar total de horas reservadas por bicicleta
+    @Query("SELECT COALESCE(SUM(da.horasReservadas), 0) FROM DetalleAlquiler da WHERE da.bicicleta.codigoBicicleta = :codigoBicicleta")
+    Long sumHorasReservadasByBicicleta(@Param("codigoBicicleta") String codigoBicicleta);
+    
+    // Contar total de horas reservadas por cliente
+    @Query("SELECT COALESCE(SUM(da.horasReservadas), 0) FROM DetalleAlquiler da WHERE da.alquiler.reserva.cliente.dni = :dni")
+    Long sumHorasReservadasByCliente(@Param("dni") String dniCliente);
     
     // Verificar si existe detalle para un alquiler específico
-    boolean existsByAlquiler_Id(Integer idAlquiler);
-    
-    // Verificar si existe detalle para una bicicleta específica
-    boolean existsByBicicleta_CodigoBicicleta(String codigoBicicleta);
-    
-    // Contar detalles por alquiler
-    Long countByAlquiler_Id(Integer idAlquiler);
+    boolean existsByAlquilerId(Integer idAlquiler);
     
     // Contar detalles por bicicleta
-    Long countByBicicleta_CodigoBicicleta(String codigoBicicleta);
+    Long countByBicicletaCodigoBicicleta(String codigoBicicleta);
     
-    // Suma total de horas reservadas por alquiler
-    @Query("SELECT SUM(d.horasReservadas) FROM DetalleAlquiler d WHERE d.alquiler.id = :idAlquiler")
-    Integer sumHorasReservadasByAlquiler(@Param("idAlquiler") Integer idAlquiler);
+    // Buscar último detalle de una bicicleta
+    @Query("SELECT da FROM DetalleAlquiler da WHERE da.bicicleta.codigoBicicleta = :codigoBicicleta ORDER BY da.id DESC LIMIT 1")
+    Optional<DetalleAlquiler> findUltimoDetalleByBicicleta(@Param("codigoBicicleta") String codigoBicicleta);
     
-    // Suma total de horas reservadas por bicicleta
-    @Query("SELECT SUM(d.horasReservadas) FROM DetalleAlquiler d WHERE d.bicicleta.codigoBicicleta = :codigoBicicleta")
-    Integer sumHorasReservadasByBicicleta(@Param("codigoBicicleta") String codigoBicicleta);
-    
-    // Obtener bicicletas más alquiladas (con más horas)
-    @Query("SELECT d.bicicleta.codigoBicicleta, d.bicicleta.nombreModelo, SUM(d.horasReservadas) as totalHoras " +
-           "FROM DetalleAlquiler d " +
-           "GROUP BY d.bicicleta.codigoBicicleta, d.bicicleta.nombreModelo " +
-           "ORDER BY totalHoras DESC")
-    List<Object[]> findBicicletasMasAlquiladas();
-    
-    // Promedio de horas reservadas por alquiler
-    @Query("SELECT AVG(d.horasReservadas) FROM DetalleAlquiler d")
-    Double getPromedioHorasReservadas();
-      
-    // Total de detalles de alquiler
-    @Query("SELECT COUNT(d) FROM DetalleAlquiler d")
-    Long countTotalDetalles();
+    // Buscar detalles de alquileres activos por bicicleta
+    @Query("SELECT da FROM DetalleAlquiler da WHERE da.bicicleta.codigoBicicleta = :codigoBicicleta AND da.alquiler.horaDevolucion IS NULL")
+    List<DetalleAlquiler> findDetallesActivosByBicicleta(@Param("codigoBicicleta") String codigoBicicleta);
     
     // Eliminar detalles por ID de alquiler
-    void deleteByAlquiler_Id(Integer idAlquiler);
+    void deleteByAlquilerId(Integer idAlquiler);
     
-    // Eliminar detalles por código de bicicleta
-    void deleteByBicicleta_CodigoBicicleta(String codigoBicicleta);
-    
+    // Verificar si existe detalle para cliente específico
+    @Query("SELECT COUNT(da) > 0 FROM DetalleAlquiler da WHERE da.id = :idDetalle AND da.alquiler.reserva.cliente.dni = :dni")
+    boolean existeDetalleForCliente(@Param("idDetalle") Integer idDetalle, @Param("dni") String dniCliente);
 }

@@ -35,58 +35,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const spanClose = modal ? modal.querySelector('.close') : null;
     const btnConfirmarAceptar = modal ? modal.querySelector('#btnConfirmar') : null;
 
-    // Almacenamiento Temporal de Datos 
-    let formData = JSON.parse(localStorage.getItem('reservaFormData')) || {};
-    function guardarDatos() {
-        formData = {
-            nombre: nombreInput ? nombreInput.value : '',
-            apellidos: apellidosInput ? apellidosInput.value : '',
-            dni: dniInput ? dniInput.value : '',
-            telefono: telefonoInput ? telefonoInput.value : '',
-            email: emailInput ? emailInput.value : '',
-            fecha: fechaInput ? fechaInput.value : '',
-            hora: horaInput ? horaInput.value : '',
-            modelo: modeloSelect ? modeloSelect.value : '',
-            duracion: duracionInput ? duracionInput.value : ''
-        };
-        for (const radio of metodosPagoRadios) { if (radio.checked) formData.metodoPago = radio.value; }
-        localStorage.setItem('reservaFormData', JSON.stringify(formData));
-    }
-
-    function cargarDatosAlmacenados() {
-        if (Object.keys(formData).length > 0) {
-            for (const key in formData) {
-                const input = document.getElementById(key);
-                if (input) {
-
-                    if (!input.value) {
-                         input.value = formData[key];
-                    }
-                    if (key === 'modelo' && formData[key]) {
-                         if (typeof actualizarVistaPreviaBicicleta === 'function') {
-                            actualizarVistaPreviaBicicleta();
-                         }
-                    }
-                }
-            }
-
-            if (typeof calcularTotal === 'function') calcularTotal();
-            if (typeof actualizarMetodoPago === 'function') {
-
-                 // Restaurar selección de método de pago
-                 for (const radio of metodosPagoRadios) {
-                     if (radio.value === formData.metodoPago) {
-                         radio.checked = true;
-                         break; 
-                     }
-                 }
-                 actualizarMetodoPago(); 
-             }
-        }
-    }
-
-     window.addEventListener('load', cargarDatosAlmacenados);
-
     // Función para mostrar/ocultar el modal y establecer su contenido
     function mostrarModal(titulo, mensajePrincipal, mensajeSecundario = "", esError = false) {
         if (modal && modalTituloEl && modalMensajePrincipalEl) {
@@ -124,13 +72,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (modal && event.target == modal) ocultarModal();
     });
 
-
     function actualizarVistaPreviaBicicleta() { 
         const selectedOption = modeloSelect.options[modeloSelect.selectedIndex];
         if (selectedOption.value) {
             const imagenSrc = selectedOption.getAttribute('data-imagen');
             const precioBase = selectedOption.getAttribute('data-precio');
-            const precioPorHora = parseFloat(precioBase || 0) / 2;
+            const precioPorHora = parseFloat(precioBase || 0);
             if (biciPreview) biciPreview.src = imagenSrc;
             if (modeloSeleccionado) modeloSeleccionado.textContent = selectedOption.textContent;
             if (precioPorHoraDisplay) precioPorHoraDisplay.textContent = `S/. ${precioPorHora.toFixed(2)} por hora`;
@@ -145,13 +92,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         calcularTotal(); 
     }
+
     function calcularTotal() { 
         const selectedOption = modeloSelect.options[modeloSelect.selectedIndex];
         const duracion = parseInt(duracionInput.value) || 0;
         if (selectedOption.value && duracion > 0) {
             const precioBase = parseFloat(selectedOption.getAttribute('data-precio') || 0);
-            const precioPorHora = precioBase / 2;
-            const total = precioPorHora * duracion;
+            const total = precioBase * duracion;
             if (resumenDuracion) resumenDuracion.textContent = `${duracion} hora${duracion > 1 ? 's' : ''}`;
             if (resumenTotal) resumenTotal.textContent = `S/. ${total.toFixed(2)}`;
         } else {
@@ -159,6 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (resumenTotal) resumenTotal.textContent = 'S/. 0.00';
         }
     }
+
     function actualizarMetodoPago() { 
         let metodoPagoSeleccionado = '';
         for (const radio of metodosPagoRadios) { if (radio.checked) metodoPagoSeleccionado = radio.value; }
@@ -180,6 +128,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (inputElement.value !== lettersOnly) inputElement.value = lettersOnly;
      }
+
+    // Validaciones de campos
     if (nombreInput) nombreInput.addEventListener('input', () => limitarLetras(nombreInput, 10));
     if (apellidosInput) apellidosInput.addEventListener('input', () => limitarLetras(apellidosInput, 10));
     if (dniInput) { dniInput.addEventListener('input', (e) => { let v = e.target.value.replace(/\D/g, ''); e.target.value = v.slice(0, 8); }); }
@@ -197,16 +147,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
      }
 
-     if (modeloSelect) modeloSelect.addEventListener('change', actualizarVistaPreviaBicicleta); // Solo actualizar UI
-     if (duracionInput) duracionInput.addEventListener('input', calcularTotal); // Solo calcular total
-     for (const radio of metodosPagoRadios) {
-         radio.addEventListener('change', actualizarMetodoPago); // Solo actualizar UI
-     }
-     
-     const allInputsForSave = form.querySelectorAll('input, select, textarea'); 
-     allInputsForSave.forEach(input => {
-         input.addEventListener('change', guardarDatos); 
-     });
+    // Event listeners para UI
+    if (modeloSelect) modeloSelect.addEventListener('change', actualizarVistaPreviaBicicleta);
+    if (duracionInput) duracionInput.addEventListener('input', calcularTotal);
+    for (const radio of metodosPagoRadios) {
+        radio.addEventListener('change', actualizarMetodoPago);
+    }
 
     form.addEventListener('submit', function(e) {
         e.preventDefault(); 
@@ -225,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
         for (const radio of metodosPagoRadios) { if (radio.checked) metodoPago = radio.value; }
         const comprobanteFile = comprobanteInput ? comprobanteInput.files[0] : null;
 
-        // --- VALIDACIONES ESTRICTAS ---
+        // Validaciones del frontend (básicas)
         const nombreSinEspacios = nombre.replace(/\s/g, '');
         if (!/^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$/.test(nombre) || nombreSinEspacios.length === 0) return mostrarModal('Error en Datos', 'Nombre: Solo se permiten letras y no puede estar vacío.', "", true);
         if (nombreSinEspacios.length > 10) return mostrarModal('Error en Datos', 'Nombre: No debe exceder las 10 letras (sin contar espacios).', "", true);
@@ -235,17 +181,15 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!/^[0-9]{8}$/.test(dni)) return mostrarModal('Error en Datos', 'DNI: Debe contener exactamente 8 números.', "", true);
         if (!['0', '1', '4', '6', '7'].includes(dni.charAt(0))) return mostrarModal('Error en Datos', 'DNI: El primer dígito no es válido (debe ser 0, 1, 4, 6 o 7).', "", true);
         const telefonoSinEspacios = telefono.replace(/\s+/g, '');
-         if (!/^[9][0-9]{8}$/.test(telefonoSinEspacios)) return mostrarModal('Error en Datos', 'Teléfono: Debe ser un celular válido de 9 dígitos que empiece con 9.', "", true);
+        if (!/^[9][0-9]{8}$/.test(telefonoSinEspacios)) return mostrarModal('Error en Datos', 'Teléfono: Debe ser un celular válido de 9 dígitos que empiece con 9.', "", true);
         const regexCorreo = new RegExp(/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
         if (!regexCorreo.test(email)) return mostrarModal('Error en Datos', 'Correo Electrónico: El formato no es válido.', "", true);
         if (!fecha) return mostrarModal('Error en Reserva', 'Debe seleccionar una Fecha de Reserva.', "", true);
+        
         const hoy = new Date();
-        const fechaSeleccionada = new Date(fecha + 'T' + (hora || '00:00')); 
-        hoy.setHours(0, 0, 0, 0); 
-
-        // Ajustar la fecha seleccionada a medianoche local para evitar problemas de zona horaria en la comparación de fechas pasadas
         const fechaSeleccionadaMedianoche = new Date(fecha);
         fechaSeleccionadaMedianoche.setHours(0,0,0,0);
+        hoy.setHours(0, 0, 0, 0);
 
         if (fechaSeleccionadaMedianoche < hoy) {
              return mostrarModal('Error en Reserva', 'La Fecha de Reserva no puede ser una fecha pasada.', "", true);
@@ -255,27 +199,74 @@ document.addEventListener('DOMContentLoaded', function() {
         const duracionNum = parseInt(duracion);
         if (isNaN(duracionNum) || duracionNum < 1 || duracionNum > 20) return mostrarModal('Error en Reserva', 'La Duración del Alquiler debe ser un número entre 1 y 20 horas.', "", true);
         if (!metodoPago) return mostrarModal('Error en Pago', 'Debe seleccionar un Método de Pago.', "", true);
-        if (metodoPago === 'transferencia' && !comprobanteFile)
+        if (metodoPago === 'transferencia' && !comprobanteFile) return mostrarModal('Error en Pago', 'Debe adjuntar el comprobante de transferencia.', "", true);
 
-
-        console.log("Formulario válido. Datos (simulado):", { nombre, apellidos, dni, telefono: telefonoSinEspacios, email, fecha, hora, modelo, duracion: duracionNum, metodoPago, comprobante: comprobanteFile ? comprobanteFile.name : 'N/A' });
-
-        mostrarModal('Reserva Exitosa',
-                     'Su reserva o alquiler ha sido realizada con éxito.',
-                     'Recibirá un correo de confirmación (simulado).');
-
-        localStorage.removeItem('reservaFormData');
-        form.reset();
-
-        actualizarVistaPreviaBicicleta(); 
-        actualizarMetodoPago(); 
-
+        // Envío al backend Spring Boot
+        enviarAlquilerAlServidor({
+            nombre,
+            apellidos,
+            dni,
+            telefono: telefonoSinEspacios,
+            email,
+            fecha,
+            hora,
+            bicicletaId: modelo,
+            duracionHoras: duracionNum,
+            metodoPago,
+            comprobante: comprobanteFile
+        });
     });
+
+    // Función para enviar datos al backend
+    function enviarAlquilerAlServidor(datos) {
+        const formData = new FormData();
+        
+        // Agregar datos del cliente
+        formData.append('clienteNombre', datos.nombre);
+        formData.append('clienteApellidos', datos.apellidos);
+        formData.append('clienteDni', datos.dni);
+        formData.append('clienteTelefono', datos.telefono);
+        formData.append('clienteEmail', datos.email);
+        
+        // Agregar datos del alquiler
+        formData.append('bicicletaId', datos.bicicletaId);
+        formData.append('fechaReserva', datos.fecha);
+        formData.append('horaReserva', datos.hora);
+        formData.append('duracionHoras', datos.duracionHoras);
+        formData.append('metodoPago', datos.metodoPago);
+        
+        if (datos.comprobante) {
+            formData.append('comprobante', datos.comprobante);
+        }
+
+        fetch('/api/alquiler/registrar', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(error => Promise.reject(error));
+            }
+            return response.json();
+        })
+        .then(data => {
+            mostrarModal('Reserva Exitosa',
+                         'Su reserva ha sido realizada con éxito.',
+                         `Número de reserva: ${data.id}`);
+            form.reset();
+            actualizarVistaPreviaBicicleta(); 
+            actualizarMetodoPago();
+        })
+        .catch(error => {
+            mostrarModal('Error en Reserva', 
+                         error.message || 'Ocurrió un error al procesar su reserva.',
+                         'Intente nuevamente.', true);
+        });
+    }
 
     // Verificar si el usuario está logueado
     const isLoggedIn = localStorage.getItem('loggedIn') === 'true';
     if (!isLoggedIn) {
-
         window.location.href = 'Login.html';
         return; 
     }
@@ -283,4 +274,4 @@ document.addEventListener('DOMContentLoaded', function() {
     actualizarVistaPreviaBicicleta();
     actualizarMetodoPago();
 
-}); 
+});

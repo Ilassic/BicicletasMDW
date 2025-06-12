@@ -2,7 +2,9 @@ package com.empresa.bicicleta.repository;
 
 import java.math.BigDecimal;
 import java.sql.Date;
+import java.sql.Time;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -10,83 +12,70 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.empresa.bicicleta.model.Alquiler;
-import com.empresa.bicicleta.model.MetodoPago;
 
 @Repository
 public interface AlquilerRepository extends JpaRepository<Alquiler, Integer>{
     
-    // Buscar por fecha de alquiler
-    List<Alquiler> findByFechaAlquiler(Date fechaAlquiler);
-
-    // Buscar por método de pago
-    List<Alquiler> findByMetodoPago(MetodoPago metodoPago);
+    // Buscar alquileres por DNI del cliente - Para historial del usuario
+    List<Alquiler> findByReservaClienteDniOrderByFechaAlquilerDesc(String dniCliente);
     
-    // Buscar por tipo de pago
-    List<Alquiler> findByMetodoPago_TipoPago(String tipoPago);
+    // Buscar alquiler activo por DNI del cliente - Para verificar si tiene alquiler en curso
+    @Query("SELECT a FROM Alquiler a WHERE a.reserva.cliente.dni = :dni AND a.horaDevolucion IS NULL")
+    Optional<Alquiler> findAlquilerActivoByCliente(@Param("dni") String dniCliente);
     
-    // Buscar por ID de método de pago
-    List<Alquiler> findByMetodoPago_Id(Integer idMetodoPago);
+    // Buscar alquiler por ID de reserva - Para procesar el alquiler de una reserva
+    Optional<Alquiler> findByReservaId(Integer idReserva);
     
-    // Buscar por costo total
-    List<Alquiler> findByCostoTotal(BigDecimal costoTotal);
+    // Buscar alquileres por código de bicicleta - Para historial de uso de bicicleta
+    List<Alquiler> findByReservaBicicletaCodigoBicicletaOrderByFechaAlquilerDesc(String codigoBicicleta);
     
-    // Buscar por rango de costo
-    List<Alquiler> findByCostoTotalBetween(BigDecimal costoMinimo, BigDecimal costoMaximo);
+    // Verificar si una bicicleta está actualmente alquilada - Para disponibilidad
+    @Query("SELECT COUNT(a) > 0 FROM Alquiler a WHERE a.reserva.bicicleta.codigoBicicleta = :codigoBicicleta AND a.horaDevolucion IS NULL")
+    boolean existeAlquilerActivoBicicleta(@Param("codigoBicicleta") String codigoBicicleta);
     
-    // Contar alquileres por fecha
-    Long countByFechaAlquiler(Date fecha);
-
-    @Query("SELECT SUM(a.costoTotal) FROM Alquiler a")
-    BigDecimal sumTotalIngresos();
+    // Buscar alquileres por fecha específica - Para consultas del usuario
+    List<Alquiler> findByFechaAlquilerOrderByHoraInicioDesc(Date fechaAlquiler);
     
-    // Suma de ingresos por cliente (a través de reserva)
-    @Query("SELECT SUM(a.costoTotal) FROM Alquiler a WHERE a.reserva.cliente.dni = :dni")
-    BigDecimal sumIngresosByCliente(@Param("dni") String dni);
-    
-    // Suma de ingresos por fecha
-    @Query("SELECT SUM(a.costoTotal) FROM Alquiler a WHERE a.fechaAlquiler = :fecha")
-    BigDecimal sumIngresosByFecha(@Param("fecha") Date fecha);
-    
-    // Suma de ingresos en rango de fechas
-    @Query("SELECT SUM(a.costoTotal) FROM Alquiler a WHERE a.fechaAlquiler BETWEEN :fechaInicio AND :fechaFin")
-    BigDecimal sumIngresosByFechaRange(
+    // Buscar alquileres en rango de fechas para un cliente - Para historial filtrado
+    @Query("SELECT a FROM Alquiler a WHERE a.reserva.cliente.dni = :dni AND a.fechaAlquiler BETWEEN :fechaInicio AND :fechaFin ORDER BY a.fechaAlquiler DESC")
+    List<Alquiler> findAlquileresByClienteAndFechaRange(
+        @Param("dni") String dniCliente,
         @Param("fechaInicio") Date fechaInicio, 
         @Param("fechaFin") Date fechaFin
     );
     
-    // Promedio de costo por alquiler
-    @Query("SELECT AVG(a.costoTotal) FROM Alquiler a")
-    BigDecimal getPromedioCostoAlquiler();
+    // Calcular costo total de alquileres de un cliente - Para mostrar gastos totales
+    @Query("SELECT COALESCE(SUM(a.costoTotal), 0) FROM Alquiler a WHERE a.reserva.cliente.dni = :dni")
+    BigDecimal calcularTotalGastadoByCliente(@Param("dni") String dniCliente);
     
-    // Promedio de horas por alquiler
-    @Query("SELECT AVG(a.totalHoras) FROM Alquiler a")
-    Double getPromedioHorasAlquiler();
+    // Contar total de alquileres de un cliente - Para estadísticas personales
+    Long countByReservaClienteDni(String dniCliente);
     
-    // Clientes con más alquileres (a través de reserva)
-    @Query("SELECT a.reserva.cliente.dni, a.reserva.cliente.nombre, a.reserva.cliente.apellidos, COUNT(a) as totalAlquileres " +
-           "FROM Alquiler a " +
-           "GROUP BY a.reserva.cliente.dni, a.reserva.cliente.nombre, a.reserva.cliente.apellidos " +
-           "ORDER BY totalAlquileres DESC")
-    List<Object[]> getClientesConMasAlquileres();
-
-    // Total de alquileres
-    @Query("SELECT COUNT(a) FROM Alquiler a")
-    Long countTotalAlquileres();
+    // Buscar último alquiler de un cliente - Para mostrar última actividad
+    @Query("SELECT a FROM Alquiler a WHERE a.reserva.cliente.dni = :dni ORDER BY a.fechaAlquiler DESC, a.horaInicio DESC LIMIT 1")
+    Optional<Alquiler> findUltimoAlquilerByCliente(@Param("dni") String dniCliente);
     
-    // Buscar alquileres por DNI del cliente (a través de reserva)
-    List<Alquiler> findByReservaClienteDni(String dniCliente);
+    // Buscar alquileres completados (con hora de devolución) por cliente
+    @Query("SELECT a FROM Alquiler a WHERE a.reserva.cliente.dni = :dni AND a.horaDevolucion IS NOT NULL ORDER BY a.fechaAlquiler DESC")
+    List<Alquiler> findAlquileresCompletadosByCliente(@Param("dni") String dniCliente);
     
-    // Buscar alquileres por código de bicicleta (a través de reserva)
-    List<Alquiler> findByReservaBicicletaCodigoBicicleta(String codigoBicicleta);
+    // Buscar alquileres por método de pago y cliente - Para filtros de historial
+    @Query("SELECT a FROM Alquiler a WHERE a.reserva.cliente.dni = :dni AND a.metodoPago.tipoPago = :tipoPago ORDER BY a.fechaAlquiler DESC")
+    List<Alquiler> findByClienteAndMetodoPago(@Param("dni") String dniCliente, @Param("tipoPago") String tipoPago);
     
-    // Buscar alquileres por ID de reserva
-    List<Alquiler> findByReservaId(Integer idReserva);
+    // Verificar si existe alquiler con ID específico para un cliente - Para validaciones de seguridad
+    @Query("SELECT COUNT(a) > 0 FROM Alquiler a WHERE a.id = :idAlquiler AND a.reserva.cliente.dni = :dni")
+    boolean existeAlquilerForCliente(@Param("idAlquiler") Integer idAlquiler, @Param("dni") String dniCliente);
     
-    // Contar alquileres por método de pago
-    @Query("SELECT a.metodoPago.tipoPago, COUNT(a) FROM Alquiler a GROUP BY a.metodoPago.tipoPago")
-    List<Object[]> countByMetodoPago();
+    // Buscar alquileres por costo en rango para un cliente - Para filtros de búsqueda
+    @Query("SELECT a FROM Alquiler a WHERE a.reserva.cliente.dni = :dni AND a.costoTotal BETWEEN :costoMin AND :costoMax ORDER BY a.fechaAlquiler DESC")
+    List<Alquiler> findByClienteAndCostoRange(
+        @Param("dni") String dniCliente,
+        @Param("costoMin") BigDecimal costoMinimo, 
+        @Param("costoMax") BigDecimal costoMaximo
+    );
     
-    // Ingresos por método de pago
-    @Query("SELECT a.metodoPago.tipoPago, SUM(a.costoTotal) FROM Alquiler a GROUP BY a.metodoPago.tipoPago")
-    List<Object[]> sumIngresosByMetodoPago();
+    // Actualizar hora de devolución - Para finalizar alquiler
+    @Query("UPDATE Alquiler a SET a.horaDevolucion = :horaDevolucion WHERE a.id = :idAlquiler")
+    void actualizarHoraDevolucion(@Param("idAlquiler") Integer idAlquiler, @Param("horaDevolucion") Time horaDevolucion);
 }

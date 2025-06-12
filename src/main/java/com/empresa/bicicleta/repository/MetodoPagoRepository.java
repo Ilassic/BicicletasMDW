@@ -4,54 +4,49 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import com.empresa.bicicleta.model.MetodoPago;
-
 
 @Repository
 public interface MetodoPagoRepository extends JpaRepository<MetodoPago, Integer>{
     
-    // Buscar por tipo de pago
-    List<MetodoPago> findByTipoPago(String tipoPago);
-
-    // Buscar por tipo de pago específico (único)
+    // Buscar método de pago por tipo
+    Optional<MetodoPago> findByTipoPago(String tipoPago);
+    
+    // Buscar métodos de pago por tipo (ignora mayúsculas/minúsculas)
     Optional<MetodoPago> findByTipoPagoIgnoreCase(String tipoPago);
     
-    // Verificar si existe un tipo de pago
-    boolean existsByTipoPago(String tipoPago);
-
-     // Buscar métodos de pago con descripción no nula
-    List<MetodoPago> findByDescripcionIsNotNull();
-    
-    // Buscar métodos de pago sin descripción
-    List<MetodoPago> findByDescripcionIsNull();
-
-    // Buscar por descripción
-    List<MetodoPago> findByDescripcion(String descripcion);
-
-    // Buscar por tipo de pago que contenga texto
-    @Query("SELECT m FROM MetodoPago m WHERE LOWER(m.tipoPago) LIKE LOWER(CONCAT('%', :texto, '%'))")
-    List<MetodoPago> findByTipoPagoContaining(@Param("texto") String texto);
-
-    // Obtener todos los tipos de pago únicos
-    @Query("SELECT DISTINCT m.tipoPago FROM MetodoPago m ORDER BY m.tipoPago")
-    List<String> findDistinctTiposPago();
-
-    // Contar métodos de pago por tipo
-    @Query("SELECT m.tipoPago, COUNT(m) FROM MetodoPago m GROUP BY m.tipoPago ORDER BY COUNT(m) DESC")
-    List<Object[]> countMetodosPagoPorTipo();
-    
-    // Buscar métodos de pago ordenados por tipo
+    // Buscar todos los métodos ordenados por tipo
     List<MetodoPago> findAllByOrderByTipoPagoAsc();
     
-    // Buscar métodos de pago ordenados por ID
-    List<MetodoPago> findAllByOrderByIdAsc();
-
-    //Verificar disponibilidad de tipo de pago para actualización
-    @Query("SELECT CASE WHEN COUNT(m) > 0 THEN true ELSE false END FROM MetodoPago m " +
-           "WHERE m.tipoPago = :tipoPago AND m.id != :id")
-    boolean existsTipoPagoForOtherMetodo(@Param("tipoPago") String tipoPago, @Param("id") Integer id);
+    // Buscar métodos que contengan texto específico en tipo de pago
+    List<MetodoPago> findByTipoPagoContainingIgnoreCase(String texto);
+    
+    // Buscar métodos que contengan texto específico en descripción
+    List<MetodoPago> findByDescripcionContainingIgnoreCase(String texto);
+    
+    // Verificar si existe método de pago por tipo
+    boolean existsByTipoPago(String tipoPago);
+    
+    // Verificar si existe método de pago por tipo (ignora mayúsculas/minúsculas)
+    boolean existsByTipoPagoIgnoreCase(String tipoPago);
+    
+    // Contar cuántos alquileres usan este método de pago
+    @Query("SELECT COUNT(a) FROM Alquiler a WHERE a.metodoPago.id = :idMetodoPago")
+    Long countAlquileresByMetodoPago(@Param("idMetodoPago") Integer idMetodoPago);
+    
+    // Buscar métodos de pago activos (que tienen alquileres asociados)
+    @Query("SELECT DISTINCT mp FROM MetodoPago mp INNER JOIN Alquiler a ON a.metodoPago.id = mp.id")
+    List<MetodoPago> findMetodosPagoActivos();
+    
+    // Buscar métodos de pago no utilizados
+    @Query("SELECT mp FROM MetodoPago mp WHERE mp.id NOT IN (SELECT DISTINCT a.metodoPago.id FROM Alquiler a WHERE a.metodoPago IS NOT NULL)")
+    List<MetodoPago> findMetodosPagoNoUtilizados();
+    
+    // Buscar método de pago más utilizado
+    @Query("SELECT a.metodoPago FROM Alquiler a GROUP BY a.metodoPago ORDER BY COUNT(a) DESC LIMIT 1")
+    Optional<MetodoPago> findMetodoPagoMasUtilizado();
 }

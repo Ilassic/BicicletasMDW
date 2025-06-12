@@ -1,96 +1,97 @@
 package com.empresa.bicicleta.repository;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Date;
-import java.util.Optional;
+import java.util.List;
 
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.empresa.bicicleta.model.Bicicleta;
+import com.empresa.bicicleta.enums.EstadoDisponibilidad;
 
 @Repository
-public interface BicicletaRepository extends JpaRepository<Bicicleta, String> {
-    // Búsqueda por código de bicicleta
-    Optional<Bicicleta> findByCodigoBicicleta(String codigoBicicleta);
-    
-    // Verificar si existe una bicicleta por código
-    boolean existsByCodigoBicicleta(String codigoBicicleta);
-    
-    // Buscar por nombre del modelo
-    List<Bicicleta> findByNombreModelo(String nombreModelo);
-    
-    // Buscar por nombre del modelo (búsqueda parcial)
-    @Query("SELECT b FROM Bicicleta b WHERE LOWER(b.nombreModelo) LIKE LOWER(CONCAT('%', :modelo, '%'))")
-    List<Bicicleta> findByNombreModeloContaining(@Param("modelo") String modelo);
-    
-    // Buscar por categoría
-    List<Bicicleta> findByCategoria(String categoria);
-    
-    // Buscar por disponibilidad
-    List<Bicicleta> findByDisponibilidad(String disponibilidad);
+public interface BicicletaRepository extends JpaRepository<Bicicleta, String>{
     
     // Buscar bicicletas disponibles
-    @Query("SELECT b FROM Bicicleta b WHERE b.disponibilidad = 'disponible'")
-    List<Bicicleta> findBicicletasDisponibles();
+    List<Bicicleta> findByDisponibilidadOrderByNombreModeloAsc(EstadoDisponibilidad disponibilidad);
     
-    // Buscar bicicletas en mantenimiento
-    @Query("SELECT b FROM Bicicleta b WHERE b.disponibilidad = 'mantenimiento'")
-    List<Bicicleta> findBicicletasEnMantenimiento();
+    // Buscar bicicletas por marca
+    List<Bicicleta> findByMarcaIgnoreCaseOrderByNombreModeloAsc(String marca);
     
-    // Buscar bicicletas alquiladas
-    @Query("SELECT b FROM Bicicleta b WHERE b.disponibilidad = 'alquilada'")
-    List<Bicicleta> findBicicletasAlquiladas();
+    // Buscar bicicletas por categoría
+    List<Bicicleta> findByCategoriaIgnoreCaseOrderByPrecioAsc(String categoria);
     
-    // Buscar por rango de precios
-    List<Bicicleta> findByPrecioBetween(BigDecimal precioMinimo, BigDecimal precioMaximo);
+    // Buscar bicicletas por nombre de modelo
+    List<Bicicleta> findByNombreModeloContainingIgnoreCaseOrderByPrecioAsc(String nombreModelo);
     
-    // Buscar por precio menor o igual
-    List<Bicicleta> findByPrecioLessThanEqual(BigDecimal precio);
-    
-    // Buscar por precio mayor o igual
-    List<Bicicleta> findByPrecioGreaterThanEqual(BigDecimal precio);
-    
-    // Buscar por categoría y disponibilidad
-    List<Bicicleta> findByCategoriaAndDisponibilidad(String categoria, String disponibilidad);
+    // Buscar bicicletas en rango de precio
+    List<Bicicleta> findByPrecioBetweenOrderByPrecioAsc(BigDecimal precioMin, BigDecimal precioMax);
     
     // Buscar bicicletas disponibles por categoría
-    @Query("SELECT b FROM Bicicleta b WHERE b.categoria = :categoria AND b.disponibilidad = 'disponible'")
-    List<Bicicleta> findBicicletasDisponiblesByCategoria(@Param("categoria") String categoria);
+    List<Bicicleta> findByCategoriaIgnoreCaseAndDisponibilidadOrderByPrecioAsc(String categoria, EstadoDisponibilidad disponibilidad);
     
-    // Buscar bicicletas registradas en un rango de fechas
-    @Query("SELECT b FROM Bicicleta b WHERE b.fechaRegistro BETWEEN :fechaInicio AND :fechaFin")
-    List<Bicicleta> findByFechaRegistroBetween(
-        @Param("fechaInicio") Date fechaInicio, 
-        @Param("fechaFin") Date fechaFin
-    );
+    // Buscar bicicletas disponibles por marca
+    List<Bicicleta> findByMarcaIgnoreCaseAndDisponibilidadOrderByPrecioAsc(String marca, EstadoDisponibilidad disponibilidad);
     
-    // Buscar bicicletas registradas después de una fecha
-    List<Bicicleta> findByFechaRegistroAfter(Date fecha);
+    // Buscar bicicletas disponibles en rango de precio
+    List<Bicicleta> findByPrecioBetweenAndDisponibilidadOrderByPrecioAsc(BigDecimal precioMin, BigDecimal precioMax, EstadoDisponibilidad disponibilidad);
     
-    // Buscar bicicletas registradas antes de una fecha
-    List<Bicicleta> findByFechaRegistroBefore(Date fecha);
+    // Buscar por descripción
+    List<Bicicleta> findByDescriptionContainingIgnoreCase(String texto);
     
-    // Contar bicicletas por categoría
-    @Query("SELECT b.categoria, COUNT(b) FROM Bicicleta b GROUP BY b.categoria")
-    List<Object[]> countBicicletasPorCategoria();
+    // Buscar todas las marcas distintas
+    @Query("SELECT DISTINCT b.marca FROM Bicicleta b ORDER BY b.marca")
+    List<String> findDistinctMarcas();
     
-    // Contar bicicletas por disponibilidad
-    @Query("SELECT b.disponibilidad, COUNT(b) FROM Bicicleta b GROUP BY b.disponibilidad")
-    List<Object[]> countBicicletasPorDisponibilidad();
-    
-    // Obtener categorías únicas
+    // Buscar todas las categorías distintas
     @Query("SELECT DISTINCT b.categoria FROM Bicicleta b ORDER BY b.categoria")
     List<String> findDistinctCategorias();
     
-    // Precio promedio de bicicletas
-    @Query("SELECT AVG(b.precio) FROM Bicicleta b")
-    BigDecimal getPromedioPrecioBicicletas();
+    // Contar bicicletas por disponibilidad
+    Long countByDisponibilidad(EstadoDisponibilidad disponibilidad);
     
-    // Precio promedio por categoría
-    @Query("SELECT b.categoria, AVG(b.precio) FROM Bicicleta b GROUP BY b.categoria")
-    List<Object[]> getPromedioPrecioPorCategoria();
+    // Contar bicicletas por marca
+    Long countByMarcaIgnoreCase(String marca);
+    
+    // Contar bicicletas por categoría
+    Long countByCategoriaIgnoreCase(String categoria);
+    
+    // Buscar bicicletas más baratas primero
+    List<Bicicleta> findByDisponibilidadOrderByPrecioAsc(EstadoDisponibilidad disponibilidad);
+    
+    // Buscar bicicletas más caras primero
+    List<Bicicleta> findByDisponibilidadOrderByPrecioDesc(EstadoDisponibilidad disponibilidad);
+    
+    // Buscar bicicletas registradas después de una fecha
+    List<Bicicleta> findByFechaRegistroAfterOrderByFechaRegistroDesc(Date fecha);
+    
+    // Actualizar disponibilidad de bicicleta
+    @Modifying
+    @Query("UPDATE Bicicleta b SET b.disponibilidad = :nuevaDisponibilidad WHERE b.codigoBicicleta = :codigo")
+    void actualizarDisponibilidad(@Param("codigo") String codigoBicicleta, @Param("nuevaDisponibilidad") EstadoDisponibilidad nuevaDisponibilidad);
+    
+    // Verificar si bicicleta está disponible
+    @Query("SELECT b.disponibilidad = 'DISPONIBLE' FROM Bicicleta b WHERE b.codigoBicicleta = :codigo")
+    boolean isDisponible(@Param("codigo") String codigoBicicleta);
+    
+    // Buscar bicicletas similares por marca y categoría (excluyendo una específica)
+    @Query("SELECT b FROM Bicicleta b WHERE b.marca = :marca AND b.categoria = :categoria AND b.codigoBicicleta != :codigoExcluir AND b.disponibilidad = 'DISPONIBLE' ORDER BY b.precio ASC")
+    List<Bicicleta> findSimilares(@Param("marca") String marca, @Param("categoria") String categoria, @Param("codigoExcluir") String codigoExcluir);
+    
+    // Buscar bicicletas con filtros múltiples
+    @Query("SELECT b FROM Bicicleta b WHERE " +
+           "(:marca IS NULL OR LOWER(b.marca) LIKE LOWER(CONCAT('%', :marca, '%'))) AND " +
+           "(:categoria IS NULL OR LOWER(b.categoria) LIKE LOWER(CONCAT('%', :categoria, '%'))) AND " +
+           "(:precioMin IS NULL OR b.precio >= :precioMin) AND " +
+           "(:precioMax IS NULL OR b.precio <= :precioMax) AND " +
+           "b.disponibilidad = 'DISPONIBLE' " +
+           "ORDER BY b.precio ASC")
+    List<Bicicleta> findWithFilters(@Param("marca") String marca, 
+                                   @Param("categoria") String categoria,
+                                   @Param("precioMin") BigDecimal precioMin,
+                                   @Param("precioMax") BigDecimal precioMax);
 }

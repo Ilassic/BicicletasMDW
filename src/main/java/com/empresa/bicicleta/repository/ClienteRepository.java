@@ -71,7 +71,4 @@ public interface ClienteRepository extends JpaRepository<Cliente, String> {
            "WHERE c.telefono = :telefono AND c.dni != :dni")
     boolean existsTelefonoForOtherClient(@Param("telefono") String telefono, @Param("dni") String dni);
        
-    // Estadísticas: Total de clientes registrados
-    @Query("SELECT COUNT(c) FROM Cliente c")
-    Long countTotalClientes();
 }
