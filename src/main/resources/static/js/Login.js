@@ -2,9 +2,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Selección de Elementos 
     const loginTab = document.getElementById('login-tab');
     const registerTab = document.getElementById('register-tab');
-    const loginFormSection = document.getElementById('login-section');
+    const loginFormSection = document.getElementById('login-form');
     const registerFormSection = document.getElementById('register-form');
-    const loginForm = document.getElementById('login-form');
+    const loginForm = document.getElementById('loginForm');
     const registerForm = document.getElementById('registerForm');
 
     // Inputs de Registro
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Link Olvidaste Contraseña
     const forgotPasswordLink = document.querySelector('.forgot-password');
 
-    // Lógica para Cambiar Pestañas (Login/Registro)s
+    // Lógica para Cambiar Pestañas (Login/Registro)
     if (loginTab && registerTab && loginFormSection && registerFormSection) {
         loginTab.addEventListener('click', () => {
             loginTab.classList.add('active'); registerTab.classList.remove('active');
@@ -50,17 +50,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     setupShowPasswordToggle(showPasswordLogin, passwordLoginInput);
     setupShowPasswordToggle(showPasswordRegister, passwordInput);
- 
-    function obtenerUsuariosRegistrados() {
-        const usuarios = localStorage.getItem('usuariosRegistrados');
-        return usuarios ? JSON.parse(usuarios) : {};
-    }
-    function guardarUsuario(email, userData) {
-        const usuarios = obtenerUsuariosRegistrados();
-        usuarios[email.toLowerCase()] = userData;
-
-        localStorage.setItem('usuariosRegistrados', JSON.stringify(usuarios));
-    }
 
     // --- Lógica del Modal Principal (Errores/Confirmaciones) ---
     const modal = document.getElementById('mensajeModal');
@@ -105,9 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
                  recuperarForm.onsubmit = (e) => {
                     e.preventDefault();
                     const email = document.getElementById('recovery-email').value.trim().toLowerCase();
-                    const usuarios = obtenerUsuariosRegistrados();
                     if(recuperacionModal) recuperacionModal.style.display = 'none';
-                    mostrarModal(usuarios[email] ? 'Correo Enviado (Simulado)' : 'Correo No Encontrado', usuarios[email] ? `Si ${email} está registrado, se han enviado instrucciones.` : `El correo electrónico ${email} no se encuentra registrado.`);
+                    mostrarModal('Función no disponible', 'La recuperación de contraseña se implementará próximamente.');
                 };
              }
         }
@@ -175,8 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 value = '';
             }
 
-
-            digits = value.slice(0, 9); 
+            let digits = value.slice(0, 9); 
 
             let formattedValue = '';
             if (digits.length > 6) formattedValue = digits.slice(0, 3) + ' ' + digits.slice(3, 6) + ' ' + digits.slice(6);
@@ -189,16 +176,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-     if(passwordInput){
-     }
-     
-     if(confirmPasswordInput){
-     }
-
-
     // --- Listener para el Formulario de Inicio de Sesión ---
     if (loginForm) {
-        loginForm.addEventListener('submit', (e) => {
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const correo = emailLoginInput.value.trim();
             const password = passwordLoginInput.value.trim();
@@ -207,27 +187,38 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!regexCorreo.test(correo)) return mostrarModal('Error', 'Correo electrónico no válido.');
             if (!password) return mostrarModal('Error', 'Por favor, ingrese su contraseña.');
 
-            const usuarios = obtenerUsuariosRegistrados();
-            const usuarioRegistrado = usuarios[correo.toLowerCase()];
+            try {
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: correo,
+                        password: password
+                    })
+                });
 
-            if (usuarioRegistrado && usuarioRegistrado.password === password) {
-                localStorage.setItem('loggedIn', 'true');
-                localStorage.setItem('userEmail', usuarioRegistrado.email);
-                localStorage.setItem('userDNI', usuarioRegistrado.dni);
-                localStorage.setItem('userName', usuarioRegistrado.nombre);
-                localStorage.setItem('userLastName', usuarioRegistrado.apellidos);
-                localStorage.setItem('userRegisterDate', usuarioRegistrado.fechaRegistro);
-                mostrarModal('¡Inicio de Sesión Exitoso!', 'Serás redirigido a la pantalla correspondiente para que puedas reservar el alquiler de tu bicicleta.');
-                setTimeout(() => { window.location.href = "Reser-Alqui.html"; }, 2000);
-            } else {
-                mostrarModal('Error de Inicio de Sesión', 'El correo electrónico o la contraseña son incorrectos.');
+                const data = await response.json();
+
+                if (data.success) {
+                    mostrarModal('¡Inicio de Sesión Exitoso!', 'Serás redirigido a la pantalla correspondiente para que puedas reservar el alquiler de tu bicicleta.');
+                    setTimeout(() => { 
+                        window.location.href = data.redirectUrl || '/reservas-bicicletas'; 
+                    }, 2000);
+                } else {
+                    mostrarModal('Error de Inicio de Sesión', data.message || 'El correo electrónico o la contraseña son incorrectos.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarModal('Error de Conexión', 'Error de conexión. Por favor intenta nuevamente.');
             }
         });
     }
 
     // --- Listener para el Formulario de Registro (Validación Final) ---
     if (registerForm) {
-        registerForm.addEventListener('submit', (e) => {
+        registerForm.addEventListener('submit', async (e) => {
             e.preventDefault(); 
 
             // Obtener valores finales
@@ -240,16 +231,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const confirmPassword = confirmPasswordInput.value;
             const terms = termsCheckbox.checked;
 
-            // 1. Nombre
-            const nombreSinEspacios = nombre.replace(/\s+/g, ''); // Usar \s+ para eliminar múltiples espacios
-            if (!/^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$/.test(nombre) || nombreSinEspacios.trim().length === 0) { // Usar trim()
-            return mostrarModal('Error de Registro', 'Nombre: Solo se permiten letras y no puede estar vacío.');
+            // Nombre
+            const nombreSinEspacios = nombre.replace(/\s+/g, '');
+            if (!/^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$/.test(nombre) || nombreSinEspacios.trim().length === 0) {
+                return mostrarModal('Error de Registro', 'Nombre: Solo se permiten letras y no puede estar vacío.');
             }
             if (nombreSinEspacios.length > 10) {
-            return mostrarModal('Error de Registro', 'Nombre: No debe exceder las 10 letras (sin contar espacios).');
+                return mostrarModal('Error de Registro', 'Nombre: No debe exceder las 10 letras (sin contar espacios).');
             }
 
-            // 2. Apellidos
+            // Apellidos
             const apellidosSinEspacios = apellidos.replace(/\s/g, '');
             if (!/^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$/.test(apellidos) || apellidosSinEspacios.length === 0) {
                  return mostrarModal('Error de Registro', 'Apellidos: Solo se permiten letras y no puede estar vacío.');
@@ -258,70 +249,75 @@ document.addEventListener('DOMContentLoaded', () => {
                  return mostrarModal('Error de Registro', 'Apellidos: No deben exceder las 10 letras (sin contar espacios).');
             }
 
-            // 3. DNI
-            if (!/^[0-9]{8}$/.test(dni)) { // al menos 8 dígitos
-                return mostrarModal('Error de Registro', 'DNI: Debe contener al menos 8 números.');
+            //  DNI
+            if (!/^[0-9]{8}$/.test(dni)) {
+                return mostrarModal('Error de Registro', 'DNI: Debe contener exactamente 8 números.');
             }
             const primerDigitoDNI = dni.charAt(0);
             if (!['0', '1', '4', '6', '7'].includes(primerDigitoDNI)) {
                 return mostrarModal('Error de Registro', 'DNI: El primer dígito no es válido (debe ser 0, 1, 4, 6 o 7).');
             }
 
-            // 4. Teléfono
+            // Teléfono
             const telefonoSinEspacios = telefono.replace(/\s+/g, '');
-             if (!/^[9][0-9]{8}$/.test(telefonoSinEspacios)) { // Empieza con 9 y tiene 8 dígitos más
+             if (!/^[9][0-9]{8}$/.test(telefonoSinEspacios)) {
                  return mostrarModal('Error de Registro', 'Teléfono: Debe ser un celular válido de 9 dígitos que empiece con 9.');
              }
 
-            const regexCorreo = new RegExp(/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
+            // Correo
+            const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!regexCorreo.test(correo)) {
                 return mostrarModal('Error de Registro', 'Correo Electrónico: El formato no es válido.');
             }
 
-             // 6. Contraseña
+             // Contraseña
              if (password.length !== 12) {
-                 return mostrarModal('Error de Registro', 'Contraseña: Debe tener al menos 12 caracteres.');
+                 return mostrarModal('Error de Registro', 'Contraseña: Debe tener exactamente 12 caracteres.');
              }
 
-             // 7. Confirmar Contraseña
+             // Confirmar Contraseña
              if (password !== confirmPassword) {
                  return mostrarModal('Error de Registro', 'Confirmar Contraseña: Las contraseñas no coinciden.');
              }
 
-             // 8. Términos y Condiciones
+             // Términos y Condiciones
              if (!terms) {
                  return mostrarModal('Error de Registro', 'Debes aceptar los Términos y Condiciones.');
              }
 
+            try {
+                const response = await fetch('/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        dni: dni,
+                        nombre: nombre,
+                        apellidos: apellidos,
+                        telefono: telefonoSinEspacios,
+                        email: correo,
+                        password: password,
+                        confirmPassword: confirmPassword
+                    })
+                });
 
-            // Verificar si email ya existe (después de pasar todas las validaciones)
-            const usuarios = obtenerUsuariosRegistrados();
-            if (usuarios[correo]) {
-                return mostrarModal('Error de Registro', 'Este correo electrónico ya está registrado. Intenta iniciar sesión.');
+                const data = await response.json();
+
+                if (data.success) {
+                    mostrarModal('¡Registro Exitoso!', 'Tu cuenta ha sido creada. Ya puedes iniciar sesión.');
+                    registerForm.reset();
+                    // Cambiar a tab de login después del registro exitoso
+                    setTimeout(() => {
+                        loginTab.click();
+                    }, 2000);
+                } else {
+                    mostrarModal('Error de Registro', data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarModal('Error de Conexión', 'Error de conexión. Por favor intenta nuevamente.');
             }
-
-            const fechaRegistro = new Date().toISOString().split('T')[0];
-            const nuevoUsuario = {
-                nombre: nombre,
-                apellidos: apellidos,
-                dni: dni,
-                telefono: telefonoSinEspacios, 
-                email: correo,
-                password: password, 
-                fechaRegistro: fechaRegistro
-            };
-            guardarUsuario(correo, nuevoUsuario);
-
-            // Iniciar sesión automáticamente tras registro
-            localStorage.setItem('loggedIn', 'true');
-            localStorage.setItem('userEmail', nuevoUsuario.email);
-            localStorage.setItem('userDNI', nuevoUsuario.dni);
-            localStorage.setItem('userName', nuevoUsuario.nombre);
-            localStorage.setItem('userLastName', nuevoUsuario.apellidos);
-            localStorage.setItem('userRegisterDate', nuevoUsuario.fechaRegistro);
-
-            mostrarModal('¡Registro Exitoso!', 'Tu cuenta ha sido creada. Serás redirigido a la pantalla correspondiente para que puedas reservar el alquiler de tu bicicleta.');
-            setTimeout(() => { window.location.href = "Reser-Alqui.html"; }, 2000);
         });
     }
 
