@@ -1,5 +1,39 @@
 document.addEventListener('DOMContentLoaded', function() {
 
+    // Variables de sesión (se inicializarán desde el HTML con Thymeleaf)
+    window.userData = window.userData || {
+        loggedIn: false,
+        nombre: '',
+        apellidos: '',
+        dni: '',
+        email: '',
+        telefono: ''
+    };
+
+    // Función para cerrar sesión
+    window.cerrarSesion = function() {
+        if (confirm('¿Está seguro que desea cerrar sesión?')) {
+            fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = data.redirectUrl || '/logeo';
+                } else {
+                    alert('Error al cerrar sesión');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al cerrar sesión');
+            });
+        }
+    };
+
     const form = document.getElementById('reservaForm');
     if (!form) return; 
 
@@ -239,36 +273,24 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('comprobante', datos.comprobante);
         }
 
-        fetch('/api/alquiler/registrar', {
+        // Cambiar la URL al controlador tradicional
+        fetch('/reservar-bicicleta', {
             method: 'POST',
             body: formData
         })
         .then(response => {
-            if (!response.ok) {
-                return response.json().then(error => Promise.reject(error));
+            if (response.ok) {
+                // Redirigir a la página de éxito
+                window.location.href = '/mi-historial';
+            } else {
+                throw new Error('Error en la reserva');
             }
-            return response.json();
-        })
-        .then(data => {
-            mostrarModal('Reserva Exitosa',
-                         'Su reserva ha sido realizada con éxito.',
-                         `Número de reserva: ${data.id}`);
-            form.reset();
-            actualizarVistaPreviaBicicleta(); 
-            actualizarMetodoPago();
         })
         .catch(error => {
             mostrarModal('Error en Reserva', 
                          error.message || 'Ocurrió un error al procesar su reserva.',
                          'Intente nuevamente.', true);
         });
-    }
-
-    // Verificar si el usuario está logueado
-    const isLoggedIn = localStorage.getItem('loggedIn') === 'true';
-    if (!isLoggedIn) {
-        window.location.href = 'Login.html';
-        return; 
     }
 
     actualizarVistaPreviaBicicleta();

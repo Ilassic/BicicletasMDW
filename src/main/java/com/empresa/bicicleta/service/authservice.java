@@ -6,8 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.empresa.bicicleta.dto.LoginResult;
 import com.empresa.bicicleta.model.Cliente;
 import com.empresa.bicicleta.repository.ClienteRepository;
+import com.empresa.bicicleta.repository.AuthRepository;;
 
 @Service
 @Transactional
@@ -15,14 +17,62 @@ public class AuthService {
 
     @Autowired
     private ClienteRepository clienteRepository;
+
+    @Autowired
+    private AuthRepository authRepository;
     
     /**
-     * Autentica un usuario con correo y contraseña
-     * @param correo Correo electrónico del usuario
-     * @param contrasena Contraseña del usuario
-     * @return Cliente autenticado o null si no es válido
+     * @param correo 
+     * @param contrasena 
+     * @return 
      */
     public Cliente autenticar(String correo, String contrasena) {
+        try {
+            if (correo == null || correo.trim().isEmpty() || 
+                contrasena == null || contrasena.trim().isEmpty()) {
+                return null;
+            }
+            
+            // Usar el procedimiento almacenado para validar credenciales
+            LoginResult resultado = authRepository.ejecutarLoginProcedimiento(
+                correo.trim().toLowerCase(), 
+                contrasena
+            );
+            
+            if (resultado != null && resultado.isExitoso()) {
+                Optional<Cliente> clienteOpt = clienteRepository.findByCorreoElectronico(correo.trim().toLowerCase());
+                
+                if (clienteOpt.isPresent()) {
+                    return clienteOpt.get();
+                } else {
+                    System.err.println("Error: procedimiento dice SUCCESS pero no se encontró el usuario en BD");
+                    return null;
+                }
+            } else if (resultado != null) {
+                // Log detallado del tipo de error para debugging
+                System.out.println("Error de autenticación: " + resultado.getStatus());
+                if ("USER_NOT_EXISTS".equals(resultado.getStatus())) {
+                    System.out.println("Usuario no existe: " + correo);
+                } else if ("INCORRECT_PASSWORD".equals(resultado.getStatus())) {
+                    System.out.println("Contraseña incorrecta para usuario: " + correo);
+                }
+            }
+            
+            return null;
+            
+        } catch (Exception e) {
+            System.err.println("Error en autenticación con procedimiento: " + e.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Método alternativo que mantiene la lógica original para casos de emergencia
+     * @param correo 
+     * @param contrasena 
+     * @return 
+     */
+    public Cliente autenticarConJPA(String correo, String contrasena) {
         try {
             if (correo == null || correo.trim().isEmpty() || 
                 contrasena == null || contrasena.trim().isEmpty()) {
@@ -42,15 +92,14 @@ public class AuthService {
             return null;
             
         } catch (Exception e) {
-            System.err.println("Error en autenticación: " + e.getMessage());
+            System.err.println("Error en autenticación JPA: " + e.getMessage());
             return null;
         }
     }
-    
     /**
      * Registra un nuevo cliente
-     * @param cliente Cliente a registrar
-     * @return Cliente registrado o null si hay error
+     * @param cliente 
+     * @return 
      */
     public Cliente registrarCliente(Cliente cliente) {
         try {
@@ -74,8 +123,8 @@ public class AuthService {
     
     /**
      * Verifica si existe un cliente por correo electrónico
-     * @param correo Correo a verificar
-     * @return true si existe, false si no
+     * @param correo 
+     * @return 
      */
     public boolean existeClientePorCorreo(String correo) {
         try {
@@ -88,8 +137,8 @@ public class AuthService {
     
     /**
      * Verifica si existe un cliente por DNI
-     * @param dni DNI a verificar
-     * @return true si existe, false si no
+     * @param dni 
+     * @return 
      */
     public boolean existeClientePorDni(String dni) {
         try {
@@ -102,8 +151,8 @@ public class AuthService {
     
     /**
      * Verifica si existe un cliente por teléfono
-     * @param telefono Teléfono a verificar
-     * @return true si existe, false si no
+     * @param telefono 
+     * @return 
      */
     public boolean existeClientePorTelefono(String telefono) {
         try {
@@ -116,8 +165,8 @@ public class AuthService {
     
     /**
      * Busca un cliente por correo electrónico
-     * @param correo Correo a buscar
-     * @return Cliente encontrado o null
+     * @param correo 
+     * @return 
      */
     public Cliente buscarClientePorCorreo(String correo) {
         try {
@@ -136,8 +185,8 @@ public class AuthService {
     
     /**
      * Busca un cliente por DNI
-     * @param dni DNI a buscar
-     * @return Cliente encontrado o null
+     * @param dni
+     * @return 
      */
     public Cliente buscarClientePorDni(String dni) {
         try {
@@ -156,8 +205,8 @@ public class AuthService {
     
     /**
      * Actualiza la información de un cliente
-     * @param cliente Cliente con datos actualizados
-     * @return Cliente actualizado o null si hay error
+     * @param cliente 
+     * @return 
      */
     public Cliente actualizarCliente(Cliente cliente) {
         try {
@@ -185,9 +234,9 @@ public class AuthService {
     
     /**
      * Cambia la contraseña de un cliente
-     * @param correo Correo del cliente
-     * @param nuevaContrasena Nueva contraseña
-     * @return true si se cambió exitosamente, false si no
+     * @param correo 
+     * @param nuevaContrasena 
+     * @return 
      */
     public boolean cambiarContrasena(String correo, String nuevaContrasena) {
         try {
@@ -211,7 +260,6 @@ public class AuthService {
     }
     
     /**
-     * Método legacy para mantener compatibilidad
      * @deprecated Usar autenticar() en su lugar
      */
     @Deprecated

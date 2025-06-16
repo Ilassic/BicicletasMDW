@@ -19,58 +19,46 @@
                 <li><a th:href="@{/modelos}">Modelos de Bicicletas</a></li>
                 <li><a th:href="@{/reservas-bicicletas}">Reservas o Alquiler</a></li>
                 <li><a th:href="@{/mi-historial}">Historial de alquileres</a></li>
-                <li><a href="#" id="logout-link">Cerrar Sesión</a></li>
+                <li th:if="${loggedIn}"><a th:text="${nombre != null ? nombre + ' ' + (apellidos != null ? apellidos : '') : ''}"></a></li>
+                <li th:if="${loggedIn}"><a href="#" onclick="cerrarSesion()">Cerrar Sesión</a></li>
+                <li th:unless="${loggedIn}"><a th:href="@{/logeo}">Iniciar Sesión</a></li>
             </ul>
         </nav>
     </header>
 
     <main>
         <section id="historial-container" class="historial-section">
-            <h2>Mi Historial de Alquileres</h2>
-
-            <div class="filtros-historial">
-                <h3>Buscar Alquileres</h3>
-                <div class="filtro-grupo">
-                    <label for="filtro-dni">Buscar por DNI:</label>
-                    <input type="text" id="filtro-dni" placeholder="Ingrese DNI del usuario">
-                </div>
-                <div class="filtro-grupo">
-                    <label for="filtro-nombre">Buscar por Nombre/Apellidos:</label>
-                    <input type="text" id="filtro-nombre" placeholder="Ingrese Nombre o Apellidos">
-                </div>
-                <button id="btn-buscar-historial" class="boton-buscar">Buscar</button>
-                <button id="btn-mostrar-todo" class="boton-secundario">Mostrar Todo</button>
-            </div>
+            <h2>Historial de Alquileres</h2>
 
             <div id="info-usuario" class="info-usuario-container">
-                <h3>Información del Usuario</h3>
-                <p><strong>Usuario:</strong> <span id="usuario-nombre">Cargando...</span></p>
+                <h3>Mi Información</h3>
+                <p><strong>Nombre:</strong> <span id="usuario-nombre">Cargando...</span></p>
                 <p><strong>DNI:</strong> <span id="usuario-dni">Cargando...</span></p>
                 <p><strong>Miembro desde:</strong> <span id="usuario-fecha-registro">Cargando...</span></p>
-                <div id="mensaje-descuento" class="mensaje-info" style="display: none;">
-                    </div>
+                
+                <div id="mensaje-descuento" class="mensaje-info" style="display: none;"></div>
             </div>
 
             <div id="tabla-container" class="tabla-historial-container">
                 <h3>Detalle de Alquileres</h3>
                 <div id="mensaje-no-historial" class="mensaje-info" style="display: none;">
-                    <p>Aún no tienes alquileres registrados. ¡Anímate a <a href="@{Reser-Alqui}">reservar tu primera bicicleta</a>!</p>
+                    <p>No hay alquileres registrados. ¡Anímate a <a th:href="@{/reservas-bicicletas}">reservar tu primera bicicleta</a>!</p>
                 </div>
                 <table id="tabla-historial">
                     <thead>
                         <tr>
                             <th>Fecha Alquiler</th>
-                            <th>Hora Alquiler</th>
-                            <th>Modelo Bicicleta</th>
+                            <th>Hora Inicio</th>
+                            <th>Bicicleta</th>
                             <th>Duración (Horas)</th>
                             <th>Costo Total</th>
-                            <th>Estado</th> </tr>
+                            <th>Estado</th>
+                        </tr>
                     </thead>
                     <tbody id="historial-tbody">
-                        </tbody>
+                    </tbody>
                 </table>
             </div>
-
         </section>
     </main>
 
@@ -78,6 +66,6 @@
         <p>&copy; 2025 ERXIDI E.I.R.L - Todos los derechos reservados</p>
     </footer>
 
-    <script th:src="@{Reser-Alqui}"></script>
+    <script th:src="@{/js/historial.js}"></script>
 </body>
 </html>

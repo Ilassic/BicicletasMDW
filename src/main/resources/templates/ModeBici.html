@@ -19,6 +19,9 @@
                 <li><a th:href="@{/modelos}">Modelos de Bicicletas</a></li>
                 <li><a th:href="@{/reservas-bicicletas}">Reservas o Alquiler</a></li>
                 <li><a th:href="@{/mi-historial}">Historial de alquileres</a></li>
+                <li th:if="${loggedIn}"><a th:text="${nombre != null ? nombre + ' ' + (apellidos != null ? apellidos : '') : ''}"></a></li>
+                <li th:if="${loggedIn}"><a href="#" onclick="cerrarSesion()">Cerrar Sesión</a></li>
+                <li th:unless="${loggedIn}"><a th:href="@{/logeo}">Iniciar Sesión</a></li>
             </ul>
         </nav>
     </header>
@@ -29,346 +32,212 @@
             <p>En ERXIDI contamos con una amplia variedad de bicicletas de alta calidad para todos los gustos y necesidades. Explora nuestro catálogo y encuentra la bicicleta perfecta para tu próxima aventura.</p>
         </section>
 
-        <section id="bicicletas-montana" class="seccion-bicicletas">
+        <!-- Bicicletas de Montaña -->
+        <section id="bicicletas-montana" class="seccion-bicicletas" th:if="${not #lists.isEmpty(bicicletasMontana)}">
             <h2>Bicicletas de Montaña</h2>
             <div class="grid-bicicletas">
-                <div class="tarjeta-bicicleta">
+                <div class="tarjeta-bicicleta" th:each="bici : ${bicicletasMontana}">
                     <div class="imagen-bicicleta">
-                        <img th:src="@{/img/BiciTREK.jpg}" alt="Bicicleta Montañera Trek">
+                        <img th:src="@{${bici.imagenUrl}}" th:alt="${bici.nombreModelo}" />
+                        <!-- Estado de disponibilidad -->
+                        <div class="estado-bici" th:classappend="${bici.disponibilidad.name() == 'DISPONIBLE' ? 'disponible' : 'no-disponible'}">
+                            <span th:text="${bici.disponibilidad.name() == 'DISPONIBLE' ? 'Disponible' : 
+                                           (bici.disponibilidad.name() == 'ALQUILADA' ? 'Alquilada' : 'Fuera de servicio')}"></span>
+                        </div>
                     </div>
                     <div class="info-bicicleta">
-                        <h3>Trek Marlin 5</h3>
-                        <p class="descripcion-bici">Bicicleta de montaña con cuadro de aluminio, suspensión delantera y 21 velocidades. Ideal para terrenos irregulares y senderos forestales.</p>
+                        <h3 th:text="${bici.nombreModelo}"></h3>
+                        <p class="descripcion-bici" th:text="${bici.descripcionDetallada != null ? bici.descripcionDetallada : bici.description}"></p>
                         <div class="detalles-bici">
-                            <div class="usos">
+                            <div class="usos" th:if="${bici.usosRecomendados != null}">
                                 <h4>Recomendada para:</h4>
                                 <ul>
-                                    <li>✓ Senderos de montaña</li>
-                                    <li>✓ Terrenos irregulares</li>
-                                    <li>✓ Descensos moderados</li>
+                                    <li th:each="uso : ${#strings.listSplit(bici.usosRecomendados, ',')}" 
+                                        th:text="'✓ ' + ${uso.trim()}"></li>
                                 </ul>
                             </div>
-                            <div class="no-usos">
+                            <div class="no-usos" th:if="${bici.usosNoRecomendados != null}">
                                 <h4>No recomendada para:</h4>
                                 <ul>
-                                    <li>✗ Saltos extremos</li>
-                                    <li>✗ Descensos técnicos</li>
-                                    <li>✗ Uso prolongado en asfalto</li>
+                                    <li th:each="uso : ${#strings.listSplit(bici.usosNoRecomendados, ',')}" 
+                                        th:text="'✗ ' + ${uso.trim()}"></li>
                                 </ul>
                             </div>
                         </div>
                         <div class="precio-bici">
-                            <p class="precio"><span>S/. 18.00</span> por hora</p>
+                            <p class="precio"><span th:text="'S/. ' + ${bici.precio}"></span> por hora</p>
                         </div>
-                        <a th:href="@{Login}" class="boton-reservar">Alquilar o Reservar Bicicleta</a>
-                    </div>
-                </div>
-
-                <div class="tarjeta-bicicleta">
-                    <div class="imagen-bicicleta">
-                        <img th:src="@{/img/BiciGiant.jpg}" alt="Bicicleta Montaña Giant">
-                    </div>
-                    <div class="info-bicicleta">
-                        <h3>Giant XTC SLR 2</h3>
-                        <p class="descripcion-bici">Bicicleta de montaña con cuadro ligero de aluminio ALUXX, horquilla de suspensión con 100mm de recorrido y frenos de disco hidráulicos.</p>
-                        <div class="detalles-bici">
-                            <div class="usos">
-                                <h4>Recomendada para:</h4>
-                                <ul>
-                                    <li>✓ Rutas técnicas</li>
-                                    <li>✓ Ascensos prolongados</li>
-                                    <li>✓ Ciclistas experimentados</li>
-                                </ul>
-                            </div>
-                            <div class="no-usos">
-                                <h4>No recomendada para:</h4>
-                                <ul>
-                                    <li>✗ Principiantes</li>
-                                    <li>✗ Uso urbano</li>
-                                    <li>✗ Bikeparks</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="precio-bici">
-                            <p class="precio"><span>S/. 20.00</span> por hora</p>
-                        </div>
-                        <a th:href="@{Login}" class="boton-reservar">Alquilar o Reservar Bicicleta</a>
+                        <a th:href="@{/logeo}" 
+                           th:class="${bici.disponibilidad.name() == 'DISPONIBLE' ? 'boton-reservar' : 'boton-no-disponible'}"
+                           th:text="${bici.disponibilidad.name() == 'DISPONIBLE' ? 'Alquilar o Reservar Bicicleta' : 'No Disponible'}"></a>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section id="bicicletas-ruta" class="seccion-bicicletas">
+        <!-- Bicicletas de Ruta -->
+        <section id="bicicletas-ruta" class="seccion-bicicletas" th:if="${not #lists.isEmpty(bicicletasRuta)}">
             <h2>Bicicletas de Ruta</h2>
             <div class="grid-bicicletas">
-                <div class="tarjeta-bicicleta">
+                <div class="tarjeta-bicicleta" th:each="bici : ${bicicletasRuta}">
                     <div class="imagen-bicicleta">
-                        <img th:src="@{/img/BiciAllez.jpg}" alt="Bicicleta Ruta Specialized">
+                        <img th:src="@{${bici.imagenUrl}}" th:alt="${bici.nombreModelo}" />
+                        <div class="estado-bici" th:classappend="${bici.disponibilidad.name() == 'DISPONIBLE' ? 'disponible' : 'no-disponible'}">
+                            <span th:text="${bici.disponibilidad.name() == 'DISPONIBLE' ? 'Disponible' : 
+                                           (bici.disponibilidad.name() == 'ALQUILADA' ? 'Alquilada' : 'Fuera de servicio')}"></span>
+                        </div>
                     </div>
                     <div class="info-bicicleta">
-                        <h3>Bicicleta Specialized Allez Sport</h3>
-                        <p class="descripcion-bici">Bicicleta de ruta con cuadro de aluminio E5 Premium, horquilla de carbono FACT y transmisión Shimano Claris de 8 velocidades.</p>
+                        <h3 th:text="${bici.nombreModelo}"></h3>
+                        <p class="descripcion-bici" th:text="${bici.descripcionDetallada != null ? bici.descripcionDetallada : bici.description}"></p>
                         <div class="detalles-bici">
-                            <div class="usos">
+                            <div class="usos" th:if="${bici.usosRecomendados != null}">
                                 <h4>Recomendada para:</h4>
                                 <ul>
-                                    <li>✓ Carreteras asfaltadas</li>
-                                    <li>✓ Rutas largas</li>
-                                    <li>✓ Entrenamiento</li>
+                                    <li th:each="uso : ${#strings.listSplit(bici.usosRecomendados, ',')}" 
+                                        th:text="'✓ ' + ${uso.trim()}"></li>
                                 </ul>
                             </div>
-                            <div class="no-usos">
+                            <div class="no-usos" th:if="${bici.usosNoRecomendados != null}">
                                 <h4>No recomendada para:</h4>
                                 <ul>
-                                    <li>✗ Terrenos irregulares</li>
-                                    <li>✗ Caminos de grava</li>
-                                    <li>✗ Uso urbano intensivo</li>
+                                    <li th:each="uso : ${#strings.listSplit(bici.usosNoRecomendados, ',')}" 
+                                        th:text="'✗ ' + ${uso.trim()}"></li>
                                 </ul>
                             </div>
                         </div>
                         <div class="precio-bici">
-                            <p class="precio"><span>S/. 14.00</span> por hora</p>
+                            <p class="precio"><span th:text="'S/. ' + ${bici.precio}"></span> por hora</p>
                         </div>
-                        <a th:href="@{Login}" class="boton-reservar">Alquilar o Reservar Bicicleta</a>
-                    </div>
-                </div>
-
-                <div class="tarjeta-bicicleta">
-                    <div class="imagen-bicicleta">
-                        <img th:src="@{/img/BiciCannondale.jpeg}" alt="Bicicleta Ruta Cannondale">
-                    </div>
-                    <div class="info-bicicleta">
-                        <h3>Cannondale CAAD13</h3>
-                        <p class="descripcion-bici">Bicicleta de competición con cuadro de aluminio SmartForm C1, horquilla full carbon y grupo Shimano 105 de 11 velocidades.</p>
-                        <div class="detalles-bici">
-                            <div class="usos">
-                                <h4>Recomendada para:</h4>
-                                <ul>
-                                    <li>✓ Competición</li>
-                                    <li>✓ Ciclistas avanzados</li>
-                                    <li>✓ Alto rendimiento</li>
-                                </ul>
-                            </div>
-                            <div class="no-usos">
-                                <h4>No recomendada para:</h4>
-                                <ul>
-                                    <li>✗ Principiantes</li>
-                                    <li>✗ Paseos recreativos</li>
-                                    <li>✗ Rutas sin asfaltar</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="precio-bici">
-                            <p class="precio"><span>S/. 16.00</span> por hora</p>
-                        </div>
-                        <a th:href="@{Login}" class="boton-reservar">Alquilar o Reservar Bicicleta</a>
+                        <a th:href="@{/logeo}" 
+                           th:class="${bici.disponibilidad.name() == 'DISPONIBLE' ? 'boton-reservar' : 'boton-no-disponible'}"
+                           th:text="${bici.disponibilidad.name() == 'DISPONIBLE' ? 'Alquilar o Reservar Bicicleta' : 'No Disponible'}"></a>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section id="bicicletas-urbanas" class="seccion-bicicletas">
+        <!-- Bicicletas Urbanas -->
+        <section id="bicicletas-urbanas" class="seccion-bicicletas" th:if="${not #lists.isEmpty(bicicletasUrbanas)}">
             <h2>Bicicletas Urbanas</h2>
             <div class="grid-bicicletas">
-                <div class="tarjeta-bicicleta">
+                <div class="tarjeta-bicicleta" th:each="bici : ${bicicletasUrbanas}">
                     <div class="imagen-bicicleta">
-                        <img th:src="@{/img/BiciTownie.jpg}" alt="Bicicleta Urbana Electra">
+                        <img th:src="@{${bici.imagenUrl}}" th:alt="${bici.nombreModelo}" />
+                        <div class="estado-bici" th:classappend="${bici.disponibilidad.name() == 'DISPONIBLE' ? 'disponible' : 'no-disponible'}">
+                            <span th:text="${bici.disponibilidad.name() == 'DISPONIBLE' ? 'Disponible' : 
+                                           (bici.disponibilidad.name() == 'ALQUILADA' ? 'Alquilada' : 'Fuera de servicio')}"></span>
+                        </div>
                     </div>
                     <div class="info-bicicleta">
-                        <h3>Bicicleta Electra Townie Path Go! 10D</h3>
-                        <p class="descripcion-bici">Bicicleta urbana con geometría Flat Foot Technology® para mayor comodidad, 7 velocidades y posición de pedaleo ergonómica.</p>
+                        <h3 th:text="${bici.nombreModelo}"></h3>
+                        <p class="descripcion-bici" th:text="${bici.descripcionDetallada != null ? bici.descripcionDetallada : bici.description}"></p>
                         <div class="detalles-bici">
-                            <div class="usos">
+                            <div class="usos" th:if="${bici.usosRecomendados != null}">
                                 <h4>Recomendada para:</h4>
                                 <ul>
-                                    <li>✓ Paseos por la ciudad</li>
-                                    <li>✓ Recorridos cortos</li>
-                                    <li>✓ Usuarios ocasionales</li>
+                                    <li th:each="uso : ${#strings.listSplit(bici.usosRecomendados, ',')}" 
+                                        th:text="'✓ ' + ${uso.trim()}"></li>
                                 </ul>
                             </div>
-                            <div class="no-usos">
+                            <div class="no-usos" th:if="${bici.usosNoRecomendados != null}">
                                 <h4>No recomendada para:</h4>
                                 <ul>
-                                    <li>✗ Rutas largas</li>
-                                    <li>✗ Terrenos irregulares</li>
-                                    <li>✗ Alta velocidad</li>
+                                    <li th:each="uso : ${#strings.listSplit(bici.usosNoRecomendados, ',')}" 
+                                        th:text="'✗ ' + ${uso.trim()}"></li>
                                 </ul>
                             </div>
                         </div>
                         <div class="precio-bici">
-                            <p class="precio"><span>S/. 10.00</span> por hora</p>
+                            <p class="precio"><span th:text="'S/. ' + ${bici.precio}"></span> por hora</p>
                         </div>
-                        <a th:href="@{Login}" class="boton-reservar">Alquilar o Reservar Bicicleta</a>
-                    </div>
-                </div>
-
-                <div class="tarjeta-bicicleta">
-                    <div class="imagen-bicicleta">
-                        <img th:src="@{/img/BiciSchwinn.jpg}" alt="Bicicleta Urbana Schwinn">
-                    </div>
-                    <div class="info-bicicleta">
-                        <h3>Bicicleta Schwinn Surbuban Deluxe</h3>
-                        <p class="descripcion-bici">Bicicleta híbrida con cuadro de aluminio, suspensión delantera, 21 velocidades y guardabarros incluidos.</p>
-                        <div class="detalles-bici">
-                            <div class="usos">
-                                <h4>Recomendada para:</h4>
-                                <ul>
-                                    <li>✓ Uso diario</li>
-                                    <li>✓ Ciclovías</li>
-                                    <li>✓ Commuting</li>
-                                </ul>
-                            </div>
-                            <div class="no-usos">
-                                <h4>No recomendada para:</h4>
-                                <ul>
-                                    <li>✗ Senderos técnicos</li>
-                                    <li>✗ Competición</li>
-                                    <li>✗ Descensos</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="precio-bici">
-                            <p class="precio"><span>S/. 8.50</span> por hora</p>
-                        </div>
-                        <a th:href="@{Login}" class="boton-reservar">Alquilar o Reservar Bicicleta</a>
+                        <a th:href="@{/logeo}" 
+                           th:class="${bici.disponibilidad.name() == 'DISPONIBLE' ? 'boton-reservar' : 'boton-no-disponible'}"
+                           th:text="${bici.disponibilidad.name() == 'DISPONIBLE' ? 'Alquilar o Reservar Bicicleta' : 'No Disponible'}"></a>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section id="bicicletas-infantiles" class="seccion-bicicletas">
+        <!-- Bicicletas Infantiles -->
+        <section id="bicicletas-infantiles" class="seccion-bicicletas" th:if="${not #lists.isEmpty(bicicletasInfantiles)}">
             <h2>Bicicletas Infantiles</h2>
             <div class="grid-bicicletas">
-                <div class="tarjeta-bicicleta">
+                <div class="tarjeta-bicicleta" th:each="bici : ${bicicletasInfantiles}">
                     <div class="imagen-bicicleta">
-                        <img th:src="@{/img/BiciWoom.jpg}" alt="Bicicleta Infantil Woom">
+                        <img th:src="@{${bici.imagenUrl}}" th:alt="${bici.nombreModelo}" />
+                        <div class="estado-bici" th:classappend="${bici.disponibilidad.name() == 'DISPONIBLE' ? 'disponible' : 'no-disponible'}">
+                            <span th:text="${bici.disponibilidad.name() == 'DISPONIBLE' ? 'Disponible' : 
+                                           (bici.disponibilidad.name() == 'ALQUILADA' ? 'Alquilada' : 'Fuera de servicio')}"></span>
+                        </div>
                     </div>
                     <div class="info-bicicleta">
-                        <h3> Bicicleta Woom 3</h3>
-                        <p class="descripcion-bici">Bicicleta infantil para niños de 4-6 años, cuadro ultraligero de aluminio y frenos de fácil accionamiento.</p>
+                        <h3 th:text="${bici.nombreModelo}"></h3>
+                        <p class="descripcion-bici" th:text="${bici.descripcionDetallada != null ? bici.descripcionDetallada : bici.description}"></p>
                         <div class="detalles-bici">
-                            <div class="usos">
+                            <div class="usos" th:if="${bici.usosRecomendados != null}">
                                 <h4>Recomendada para:</h4>
                                 <ul>
-                                    <li>✓ Niños 4-6 años</li>
-                                    <li>✓ Aprendizaje</li>
-                                    <li>✓ Paseos familiares</li>
+                                    <li th:each="uso : ${#strings.listSplit(bici.usosRecomendados, ',')}" 
+                                        th:text="'✓ ' + ${uso.trim()}"></li>
                                 </ul>
                             </div>
-                            <div class="no-usos">
+                            <div class="no-usos" th:if="${bici.usosNoRecomendados != null}">
                                 <h4>No recomendada para:</h4>
                                 <ul>
-                                    <li>✗ Terrenos técnicos</li>
-                                    <li>✗ Niños mayores de 6 años</li>
-                                    <li>✗ Saltos</li>
+                                    <li th:each="uso : ${#strings.listSplit(bici.usosNoRecomendados, ',')}" 
+                                        th:text="'✗ ' + ${uso.trim()}"></li>
                                 </ul>
                             </div>
                         </div>
                         <div class="precio-bici">
-                            <p class="precio"><span>S/. 13.00</span> por hora</p>
+                            <p class="precio"><span th:text="'S/. ' + ${bici.precio}"></span> por hora</p>
                         </div>
-                        <a th:href="@{Login}" class="boton-reservar">Alquilar o Reservar Bicicleta</a>
-                    </div>
-                </div>
-
-                <div class="tarjeta-bicicleta">
-                    <div class="imagen-bicicleta">
-                        <img th:src="@{/img/BiciOrbea.jpg}" alt="Bicicleta Infantil Orbea">
-                    </div>
-                    <div class="info-bicicleta">
-                        <h3>Orbea MX 20 XC</h3>
-                        <p class="descripcion-bici">Bicicleta para niños de 7-10 años con cuadro de aluminio, 7 velocidades y frenos potentes pero seguros.</p>
-                        <div class="detalles-bici">
-                            <div class="usos">
-                                <h4>Recomendada para:</h4>
-                                <ul>
-                                    <li>✓ Niños 7-10 años</li>
-                                    <li>✓ Primeros paseos en terreno variado</li>
-                                    <li>✓ Uso recreativo</li>
-                                </ul>
-                            </div>
-                            <div class="no-usos">
-                                <h4>No recomendada para:</h4>
-                                <ul>
-                                    <li>✗ Niños menores de 7 años</li>
-                                    <li>✗ Descensos técnicos</li>
-                                    <li>✗ Uso competitivo</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="precio-bici">
-                            <p class="precio"><span>S/. 7.50</span> por hora</p>
-                        </div>
-                        <a th:href="@{Login}" class="boton-reservar">Alquilar o Reservar Bicicleta</a>
+                        <a th:href="@{/logeo}" 
+                           th:class="${bici.disponibilidad.name() == 'DISPONIBLE' ? 'boton-reservar' : 'boton-no-disponible'}"
+                           th:text="${bici.disponibilidad.name() == 'DISPONIBLE' ? 'Alquilar o Reservar Bicicleta' : 'No Disponible'}"></a>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section id="bicicletas-bmx" class="seccion-bicicletas">
+        <!-- Bicicletas BMX -->
+        <section id="bicicletas-bmx" class="seccion-bicicletas" th:if="${not #lists.isEmpty(bicicletasBMX)}">
             <h2>Bicicletas BMX</h2>
             <div class="grid-bicicletas">
-                <div class="tarjeta-bicicleta">
+                <div class="tarjeta-bicicleta" th:each="bici : ${bicicletasBMX}">
                     <div class="imagen-bicicleta">
-                        <img th:src="@{/img/BiciBMX.jpg}" alt="Bicicleta BMX We The People">
+                        <img th:src="@{${bici.imagenUrl}}" th:alt="${bici.nombreModelo}" />
+                        <div class="estado-bici" th:classappend="${bici.disponibilidad.name() == 'DISPONIBLE' ? 'disponible' : 'no-disponible'}">
+                            <span th:text="${bici.disponibilidad.name() == 'DISPONIBLE' ? 'Disponible' : 
+                                           (bici.disponibilidad.name() == 'ALQUILADA' ? 'Alquilada' : 'Fuera de servicio')}"></span>
+                        </div>
                     </div>
                     <div class="info-bicicleta">
-                        <h3>Bicicleta BMX We The People Crysis</h3>
-                        <p class="descripcion-bici">Bicicleta BMX profesional con cuadro de cromo-molibdeno 4130, horquilla aftermarket y componentes premium para trucos avanzados y street riding.</p>
+                        <h3 th:text="${bici.nombreModelo}"></h3>
+                        <p class="descripcion-bici" th:text="${bici.descripcionDetallada != null ? bici.descripcionDetallada : bici.description}"></p>
                         <div class="detalles-bici">
-                            <div class="usos">
+                            <div class="usos" th:if="${bici.usosRecomendados != null}">
                                 <h4>Recomendada para:</h4>
                                 <ul>
-                                    <li>✓ Riders avanzados</li>
-                                    <li>✓ Street riding</li>
-                                    <li>✓ Competición</li>
+                                    <li th:each="uso : ${#strings.listSplit(bici.usosRecomendados, ',')}" 
+                                        th:text="'✓ ' + ${uso.trim()}"></li>
                                 </ul>
                             </div>
-                            <div class="no-usos">
+                            <div class="no-usos" th:if="${bici.usosNoRecomendados != null}">
                                 <h4>No recomendada para:</h4>
                                 <ul>
-                                    <li>✗ Principiantes</li>
-                                    <li>✗ Desplazamientos largos</li>
-                                    <li>✗ Paseos recreativos</li>
+                                    <li th:each="uso : ${#strings.listSplit(bici.usosNoRecomendados, ',')}" 
+                                        th:text="'✗ ' + ${uso.trim()}"></li>
                                 </ul>
                             </div>
                         </div>
                         <div class="precio-bici">
-                            <p class="precio"><span>S/. 22.00</span> por hora</p>
+                            <p class="precio"><span th:text="'S/. ' + ${bici.precio}"></span> por hora</p>
                         </div>
-                        <a th:href="@{Login.html}" class="boton-reservar">Alquilar o Reservar Bicicleta</a>
-                    </div>
-                </div>
-        
-                <div class="tarjeta-bicicleta">
-                    <div class="imagen-bicicleta">
-                        <img th:src="@{/img/BiciBmx.webp}" alt="Bicicleta BMX Kink">
-                    </div>
-                    <div class="info-bicicleta">
-                        <h3>Bicicleta BMX Kink Gap</h3>
-                        <p class="descripcion-bici">BMX versátil con cuadro de cromo-molibdeno completo, buje cassette sellado y llantas de doble pared para mayor durabilidad en trucos y saltos.</p>
-                        <div class="detalles-bici">
-                            <div class="usos">
-                                <h4>Recomendada para:</h4>
-                                <ul>
-                                    <li>✓ Skatepark</li>
-                                    <li>✓ Rampas</li>
-                                    <li>✓ Riders intermedios</li>
-                                </ul>
-                            </div>
-                            <div class="no-usos">
-                                <h4>No recomendada para:</h4>
-                                <ul>
-                                    <li>✗ Uso urbano prolongado</li>
-                                    <li>✗ Rutas largas</li>
-                                    <li>✗ Terrenos de montaña</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="precio-bici">
-                            <p class="precio"><span>S/. 24.00</span> por hora</p>
-                        </div>
-                        <a th:href="@{Login}" class="boton-reservar">Alquilar o Reservar Bicicleta</a>
+                        <a th:href="@{/logeo}" 
+                           th:class="${bici.disponibilidad.name() == 'DISPONIBLE' ? 'boton-reservar' : 'boton-no-disponible'}"
+                           th:text="${bici.disponibilidad.name() == 'DISPONIBLE' ? 'Alquilar o Reservar Bicicleta' : 'No Disponible'}"></a>
                     </div>
                 </div>
             </div>
@@ -379,6 +248,5 @@
     <footer>
         <p>&copy; 2025 ERXIDI E.I.R.L - Todos los derechos reservados</p>
     </footer>
-    <script src="SesionActiva.js"></script>
 </body>
 </html>

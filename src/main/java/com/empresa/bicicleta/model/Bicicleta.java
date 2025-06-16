@@ -10,6 +10,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Column;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -35,4 +36,16 @@ public class Bicicleta {
 
     @Enumerated(EnumType.STRING)
     private EstadoDisponibilidad disponibilidad;
+
+    // Nuevos campos para soportar la estructura del HTML
+    @Column(length = 500)
+    private String usosRecomendados; // JSON o texto separado por comas
+
+    @Column(length = 500)
+    private String usosNoRecomendados; // JSON o texto separado por comas
+
+    private String imagenUrl; // Ruta de la imagen
+
+    @Column(length = 1000)
+    private String descripcionDetallada; // Descripción más completa
 }

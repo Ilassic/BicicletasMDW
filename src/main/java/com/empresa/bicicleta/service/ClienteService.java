@@ -196,4 +196,8 @@ public class ClienteService {
     public boolean tieneHistorialAlquileres(String dni) {
         return AlquilerService.contarAlquileresPorCliente(dni) > 0;
     }
+
+    public Optional<Cliente> buscarPorDni(String dni) {
+        return clienteRepository.findById(dni);
+    }
 }

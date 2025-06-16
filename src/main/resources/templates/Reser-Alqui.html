@@ -17,8 +17,11 @@
             <ul>
                 <li><a th:href="@{/}">Inicio</a></li>
                 <li><a th:href="@{/modelos}">Modelos de Bicicletas</a></li>
-                <li><a th:href="@{/reservas-bicicletas}">Reservas o Alquiler</a></li>
-                <li><a th:href="@{/mi-historial}">Historial de alquileres</a></li>
+                <li><a th:href="@{/reservas-bicicletas}">Reserva tu bicicleta</a></li>
+                <li><a th:href="@{/mi-historial}">Historial de tualquileres</a></li>
+                <li th:if="${loggedIn}"><a th:text="${nombre != null ? nombre + ' ' + (apellidos != null ? apellidos : '') : ''}"></a></li>
+                <li th:if="${loggedIn}"><a href="#" onclick="cerrarSesion()">Cerrar Sesión</a></li>
+                <li th:unless="${loggedIn}"><a th:href="@{/logeo}">Iniciar Sesión</a></li>
             </ul>
         </nav>
     </header>
@@ -26,17 +29,22 @@
     <main>
         <section id="formulario-reserva" class="formulario-container">
             <h2>¡Reserva tu bicicleta ahora!</h2>
-            <p class="descripcion">Rellena el siguiente formulario para alquilar o reservar tu bicicleta. Es sencillo y todos los campos son requeridos.</p>   
+            <p class="descripcion">Rellena el siguiente formulario para alquilar o reservar tu bicicleta. Es sencillo y todos los campos son requeridos.</p>
+            <div th:if="${loggedIn}" class="usuario-info">
+                <p><strong>Bienvenido/a:</strong> <span th:text="${nombre}"></span> <span th:text="${apellidos}"></span></p>
+                <p><small>Los datos se han rellenado automáticamente con tu información de perfil</small></p>
+            </div>
+            
             <form id="reservaForm" class="formulario-reserva">
                 <div class="form-group">
                     <div class="form-column">
                         <label for="nombre">Nombre:</label>
-                        <input type="text" id="nombre" name="nombre" required>
+                        <input type="text" id="nombre" name="nombre" th:value="${nombre}" required>
                         <small>Solo letras, máximo 10 (sin contar espacios).</small>
                     </div>
                     <div class="form-column">
                         <label for="apellidos">Apellidos:</label>
-                        <input type="text" id="apellidos" name="apellidos" required>
+                        <input type="text" id="apellidos" name="apellidos" th:value="${apellidos}" required>
                         <small>Solo letras, máximo 10 (sin contar espacios).</small>
                     </div>
                 </div>
@@ -44,12 +52,12 @@
                 <div class="form-group">
                     <div class="form-column">
                         <label for="dni">DNI:</label>
-                        <input type="tel" id="dni" name="dni" required maxlength="8">
+                        <input type="tel" id="dni" name="dni" th:value="${dni}" required maxlength="8">
                         <small>Solo 8 números. Debe empezar con 0, 1, 4, 6 o 7.</small>
                     </div>
                     <div class="form-column">
                         <label for="telefono">Teléfono:</label>
-                        <input type="tel" id="telefono" name="telefono" required maxlength="11">
+                        <input type="tel" id="telefono" name="telefono" th:value="${telefono}" required maxlength="11">
                         <small>Celular de 9 dígitos, empieza con 9 (ej: 987 654 321).</small>
                     </div>
                 </div>
@@ -57,7 +65,7 @@
                 <div class="form-group">
                     <div class="form-column full-width">
                         <label for="email">Correo Electrónico:</label>
-                        <input type="email" id="email" name="email" required>
+                        <input type="email" id="email" name="email" th:value="${email}" required>
                         <small>Debe ser un correo válido.</small>
                     </div>
                 </div>
@@ -76,28 +84,20 @@
                 <div class="form-group">
                     <div class="form-column full-width">
                         <label for="modelo">Modelo de Bicicleta:</label>
-                        <select id="modelo" name="modelo" required>
+                        <select id="modelo" name="bicicletaId" required>
                             <option value="">Seleccione un modelo</option>
-                            <optgroup label="Bicicletas de Montaña">
-                                <option value="Trek-Marlin-5" data-precio="18" data-imagen="@{/img/BiciTREK.jpg}">Trek Marlin 5</option>
-                                <option value="Giant-Talon-3" data-precio="20" data-imagen="@{/img/BiciGiant.jpg}">Giant XTC SLR 2</option>
-                            </optgroup>
-                            <optgroup label="Bicicletas de Ruta">
-                                <option value="Specialized-Allez" data-precio="14" data-imagen="@{/img/BiciAllez.jp}g">Specialized Allez Sport</option>
-                                <option value="Cannondale-CAAD13" data-precio="16" data-imagen="@{/img/BiciCannondale.jpeg}">Cannondale CAAD13</option>
-                            </optgroup>
-                            <optgroup label="Bicicletas Urbanas">
-                                <option value="Electra-Townie" data-precio="10" data-imagen="@{/img/BiciTownie.jpg}">Electra Townie Path Go! 10D</option>
-                                <option value="Schwinn-Discover" data-precio="8.50" data-imagen="@{/img/BiciSchwinn.jpg}">Schwinn Surbuban Deluxe</option>
-                            </optgroup>
-                            <optgroup label="Bicicletas Infantiles">
-                                <option value="Woom-3" data-precio="13" data-imagen="@{/img/BiciWoom.jpg}">Woom 3</option>
-                                <option value="Orbea-MX-20" data-precio="7.50" data-imagen="@{/img/BiciOrbea.jpg}">Orbea MX 20 XC</option>
-                            </optgroup>
-                            <optgroup label="Bicicletas BMX">
-                                <option value="WTP-Crysis" data-precio="22" data-imagen="@{/img/BiciBMX.jpg}">We The People Crysis</option>
-                                <option value="Kink-Gap-FC" data-precio="24" data-imagen="@{/img/BiciBmx.webp}">Kink Gap</option>
-                            </optgroup>
+                            
+                            <!-- Agrupar bicicletas por categoría dinámicamente -->
+                            <th:block th:each="categoria : ${categorias}">
+                                <optgroup th:label="${categoria}">
+                                    <option th:each="bici : ${bicicletas}" 
+                                            th:if="${bici.categoria == categoria and bici.disponibilidad.name() == 'DISPONIBLE'}"
+                                            th:value="${bici.codigoBicicleta}" 
+                                            th:text="${bici.marca + ' ' + bici.nombreModelo}"
+                                            th:attr="data-precio=${bici.precio},data-imagen=${bici.imagenUrl != null ? bici.imagenUrl : '/img/default-bike.jpg'}">
+                                    </option>
+                                </optgroup>
+                            </th:block>
                         </select>
                     </div>
                 </div>
@@ -199,6 +199,20 @@
             </div>
         </div>
     </div>
-    <script th:href="@{/js/Alquiler.js}"></script>
+
+    <script th:inline="javascript">
+        // Datos del usuario desde la sesión
+        window.userData = {
+            loggedIn: /*[[${loggedIn}]]*/ false,
+            nombre: /*[[${nombre}]]*/ '',
+            apellidos: /*[[${apellidos}]]*/ '',
+            dni: /*[[${dni}]]*/ '',
+            email: /*[[${email}]]*/ '',
+            telefono: /*[[${telefono}]]*/ ''
+        };
+
+        
+    </script>
+    <script th:src="@{/js/Alquiler.js}"></script>
 </body>
 </html>

@@ -1,6 +1,7 @@
 package com.empresa.bicicleta.service;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -155,5 +156,46 @@ public class BicicletaService {
     // Marcar como fuera de servicio
     public void marcarComoFueraDeServicio(String codigoBicicleta) {
         actualizarEstadoBicicleta(codigoBicicleta, EstadoDisponibilidad.FUERA_DE_SERVICIO);
+    }
+
+    // Método para verificar si una bicicleta está alquilada actualmente
+    public boolean estaAlquilada(String codigoBicicleta) {
+        return bicicletaRepository.findById(codigoBicicleta)
+                .map(bici -> bici.getDisponibilidad() == EstadoDisponibilidad.ALQUILADA)
+                .orElse(false);
+    }
+
+    // Método para obtener el estado de disponibilidad como texto
+    public String obtenerEstadoTexto(String codigoBicicleta) {
+        return bicicletaRepository.findById(codigoBicicleta)
+                .map(bici -> {
+                    switch (bici.getDisponibilidad()) {
+                        case DISPONIBLE:
+                            return "Disponible";
+                        case ALQUILADA:
+                            return "Alquilada";
+                        case FUERA_DE_SERVICIO:
+                            return "Fuera de servicio";
+                        default:
+                            return "Estado desconocido";
+                    }
+                })
+                .orElse("No encontrada");
+    }
+
+    // Método para convertir usos recomendados a lista
+    public List<String> obtenerUsosRecomendados(String usosRecomendados) {
+        if (usosRecomendados == null || usosRecomendados.trim().isEmpty()) {
+            return List.of();
+        }
+        return Arrays.asList(usosRecomendados.split(","));
+    }
+
+    // Método para convertir usos no recomendados a lista
+    public List<String> obtenerUsosNoRecomendados(String usosNoRecomendados) {
+        if (usosNoRecomendados == null || usosNoRecomendados.trim().isEmpty()) {
+            return List.of();
+        }
+        return Arrays.asList(usosNoRecomendados.split(","));
     }
 }

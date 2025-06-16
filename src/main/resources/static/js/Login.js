@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!password) return mostrarModal('Error', 'Por favor, ingrese su contraseña.');
 
             try {
-                const response = await fetch('/auth/login', {
+                const response = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -286,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
              }
 
             try {
-                const response = await fetch('/auth/register', {
+                const response = await fetch('/api/auth/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

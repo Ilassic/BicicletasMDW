@@ -17,6 +17,8 @@ import com.empresa.bicicleta.dto.RegisterRequest;
 import com.empresa.bicicleta.model.Cliente;
 import com.empresa.bicicleta.service.AuthService;
 
+import jakarta.servlet.http.HttpSession;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -25,20 +27,20 @@ public class AuthController {
     private AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest loginRequest, HttpSession session) {
         Map<String, Object> response = new HashMap<>();
         
         try {
             // Validar campos requeridos
             if (loginRequest.getEmail() == null || loginRequest.getEmail().trim().isEmpty()) {
                 response.put("success", false);
-                response.put("mensaje", "El correo electrónico es requerido");
+                response.put("message", "El correo electrónico es requerido");
                 return ResponseEntity.badRequest().body(response);
             }
             
             if (loginRequest.getPassword() == null || loginRequest.getPassword().trim().isEmpty()) {
                 response.put("success", false);
-                response.put("mensaje", "La contraseña es requerida");
+                response.put("message", "La contraseña es requerida");
                 return ResponseEntity.badRequest().body(response);
             }
             
@@ -46,8 +48,22 @@ public class AuthController {
             Cliente cliente = authService.autenticar(loginRequest.getEmail().trim(), loginRequest.getPassword());
             
             if (cliente != null) {
+                // Crear sesión del usuario
+                session.setAttribute("usuario", cliente);
+                session.setAttribute("dni", cliente.getDni());
+                session.setAttribute("nombre", cliente.getNombre());
+                session.setAttribute("apellidos", cliente.getApellidos());
+                session.setAttribute("email", cliente.getCorreoElectronico());
+                session.setAttribute("telefono", cliente.getTelefono());
+                session.setAttribute("fechaLogin", LocalDateTime.now());
+                session.setAttribute("loggedIn", true);
+                
+                // Establecer tiempo de vida de la sesión (30 minutos)
+                session.setMaxInactiveInterval(30 * 60);
+                
                 response.put("success", true);
-                response.put("mensaje", "Inicio de sesión exitoso");
+                response.put("message", "Inicio de sesión exitoso");
+                response.put("redirectUrl", "/reservas-bicicletas");
                 
                 // Datos del usuario para el frontend
                 Map<String, Object> userData = new HashMap<>();
@@ -57,24 +73,25 @@ public class AuthController {
                 userData.put("email", cliente.getCorreoElectronico());
                 userData.put("telefono", cliente.getTelefono());
                 userData.put("fechaRegistro", cliente.getFechaRegistro().toString());
+                userData.put("sessionId", session.getId());
                 
                 response.put("usuario", userData);
                 return ResponseEntity.ok(response);
             } else {
                 response.put("success", false);
-                response.put("mensaje", "Correo electrónico o contraseña incorrectos");
+                response.put("message", "Correo electrónico o contraseña incorrectos");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
             
         } catch (Exception e) {
             response.put("success", false);
-            response.put("mensaje", "Error interno del servidor");
+            response.put("message", "Error interno del servidor");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
     @PostMapping("/register")
-    public ResponseEntity<Map<String, Object>> register(@RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<Map<String, Object>> register(@RequestBody RegisterRequest registerRequest, HttpSession session) {
         Map<String, Object> response = new HashMap<>();
         
         try {
@@ -142,6 +159,27 @@ public class AuthController {
         } catch (Exception e) {
             response.put("success", false);
             response.put("mensaje", "Error interno del servidor: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, Object>> logout(HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // Invalidar la sesión
+            session.invalidate();
+            
+            response.put("success", true);
+            response.put("message", "Sesión cerrada exitosamente");
+            response.put("redirectUrl", "/logeo");
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Error al cerrar sesión");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
