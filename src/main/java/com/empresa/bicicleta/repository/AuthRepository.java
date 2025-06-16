@@ -19,8 +19,8 @@ public class AuthRepository {
     
     /**
      * Ejecuta el procedimiento almacenado para login
-     * @param email Correo electrónico del usuario
-     * @param password Contraseña del usuario
+     * @param email 
+     * @param password 
      * @return LoginResult con el estado de la operación
      */
     public LoginResult ejecutarLoginProcedimiento(String email, String password) {
