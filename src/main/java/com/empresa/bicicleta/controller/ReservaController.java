@@ -2,137 +2,191 @@ package com.empresa.bicicleta.controller;
 
 import java.math.BigDecimal;
 import java.sql.Date;
-import java.sql.Time;
+import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-import com.empresa.bicicleta.model.Bicicleta;
-import com.empresa.bicicleta.model.Cliente;
+import com.empresa.bicicleta.dto.ReservaRequest;
+import com.empresa.bicicleta.dto.ReservaDto;
 import com.empresa.bicicleta.model.Reserva;
-import com.empresa.bicicleta.service.BicicletaService;
-import com.empresa.bicicleta.service.ClienteService;
 import com.empresa.bicicleta.service.ReservaService;
 import com.empresa.bicicleta.enums.EstadoPago;
 import com.empresa.bicicleta.enums.EstadoReserva;
 
-import jakarta.servlet.http.HttpSession;
-
-@Controller
+@RestController
+@RequestMapping("/api/reservas")
+@CrossOrigin(origins = "*")
 public class ReservaController {
 
     @Autowired
     private ReservaService reservaService;
-    
-    @Autowired
-    private ClienteService clienteService;
-    
-    @Autowired
-    private BicicletaService bicicletaService;
 
-    @PostMapping("/reservar-bicicleta")
-    public String procesarReserva(
-            @RequestParam("clienteNombre") String nombre,
-            @RequestParam("clienteApellidos") String apellidos,
-            @RequestParam("clienteDni") String dni,
-            @RequestParam("clienteTelefono") String telefono,
-            @RequestParam("clienteEmail") String email,
-            @RequestParam("bicicletaId") String bicicletaId,
-            @RequestParam("fechaReserva") String fechaReserva,
-            @RequestParam("horaReserva") String horaReserva,
-            @RequestParam("duracionHoras") Integer duracionHoras,
-            @RequestParam("metodoPago") String metodoPago,
-            @RequestParam(value = "comprobante", required = false) MultipartFile comprobante,
-            HttpSession session,
-            Model model,
-            RedirectAttributes redirectAttributes) {
-        
+    // Crear reserva
+    @PostMapping
+    public ResponseEntity<ReservaDto> crearReserva(@RequestBody ReservaRequest request) {
         try {
-            // 1. Verificar o crear cliente
-            Cliente cliente = clienteService.buscarPorDni(dni).orElse(null);
-            if (cliente == null) {
-                // Crear nuevo cliente si no existe
-                cliente = new Cliente();
-                cliente.setDni(dni);
-                cliente.setNombre(nombre);
-                cliente.setApellidos(apellidos);
-                cliente.setTelefono(telefono);
-                cliente.setCorreoElectronico(email);
-                
-                // Establecer contraseña temporal si es necesario
-                cliente.setContrasena("temporal123"); // Se debería cambiar
-                cliente = clienteService.crearCliente(cliente);
-            }
-
-            // 2. Verificar disponibilidad de la bicicleta
-            Bicicleta bicicleta = bicicletaService.buscarPorCodigo(bicicletaId).orElse(null);
-            if (bicicleta == null) {
-                redirectAttributes.addFlashAttribute("error", "La bicicleta seleccionada no existe");
-                return "redirect:/reservas-bicicletas";
-            }
-
-            if (!bicicletaService.validarDisponibilidad(bicicletaId)) {
-                redirectAttributes.addFlashAttribute("error", "La bicicleta no está disponible");
-                return "redirect:/reservas-bicicletas";
-            }
-
-            // 3. Verificar conflictos de horario
-            Date fecha = Date.valueOf(fechaReserva);
-            Time hora = Time.valueOf(horaReserva + ":00");
-            
-            if (!reservaService.verificarDisponibilidadBicicleta(bicicletaId, fecha, hora, duracionHoras)) {
-                redirectAttributes.addFlashAttribute("error", "La bicicleta ya está reservada en ese horario");
-                return "redirect:/reservas-bicicletas";
-            }
-
-            // 4. Calcular precio total
-            BigDecimal precioTotal = bicicleta.getPrecio().multiply(new BigDecimal(duracionHoras));
-
-            // 5. Crear la reserva
-            Reserva reserva = new Reserva();
-            reserva.setCliente(cliente);
-            reserva.setBicicleta(bicicleta);
-            reserva.setFechaReserva(fecha);
-            reserva.setHoraReserva(hora);
-            reserva.setDuracionHoras(duracionHoras);
-            reserva.setPrecioTotal(precioTotal);
-            
-            // 6. Establecer estado según método de pago
-            if ("efectivo".equals(metodoPago)) {
-                reserva.setEstadoPago(EstadoPago.PENDIENTE);
-                reserva.setEstadoReserva(EstadoReserva.PENDIENTE);
-            } else if ("transferencia".equals(metodoPago)) {
-                // Si tiene comprobante, marcar como pagado (se debería validar)
-                if (comprobante != null && !comprobante.isEmpty()) {
-                    reserva.setEstadoPago(EstadoPago.PAGADO);
-                    reserva.setEstadoReserva(EstadoReserva.ENTREGADA);
-                    // Aquí podrías guardar el comprobante
-                } else {
-                    reserva.setEstadoPago(EstadoPago.PENDIENTE);
-                    reserva.setEstadoReserva(EstadoReserva.PENDIENTE);
-                }
-            }
-
-            // 7. Guardar la reserva
-            Reserva reservaCreada = reservaService.crearReserva(reserva);
-
-            // 8. Marcar bicicleta como reservada (opcional, dependiendo de tu lógica)
-            // bicicletaService.marcarComoReservada(bicicletaId);
-
-            redirectAttributes.addFlashAttribute("success", "Reserva creada exitosamente");
-            redirectAttributes.addFlashAttribute("reservaId", reservaCreada.getId());
-            redirectAttributes.addFlashAttribute("codigoReserva", reservaService.generarCodigoReserva(reservaCreada.getId()));
-            
-            return "redirect:/mi-historial";
-
+            Reserva reserva = reservaService.crearReservaFromDto(request);
+            ReservaDto response = convertirADto(reserva);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Error al procesar la reserva: " + e.getMessage());
-            return "redirect:/reservas-bicicletas";
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
+    }
+
+    // Obtener reserva por ID
+    @GetMapping("/{id}")
+    public ResponseEntity<ReservaDto> obtenerReservaPorId(@PathVariable Integer id) {
+        Optional<Reserva> reserva = reservaService.buscarPorId(id);
+        if (reserva.isPresent()) {
+            return ResponseEntity.ok(convertirADto(reserva.get()));
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    // Obtener todas las reservas
+    @GetMapping
+    public ResponseEntity<List<ReservaDto>> obtenerTodasReservas() {
+        List<Reserva> reservas = reservaService.listarTodasReservas();
+        List<ReservaDto> response = reservas.stream().map(this::convertirADto).toList();
+        return ResponseEntity.ok(response);
+    }
+
+    // Actualizar reserva
+    @PutMapping("/{id}")
+    public ResponseEntity<ReservaDto> actualizarReserva(@PathVariable Integer id, @RequestBody ReservaRequest request) {
+        try {
+            Reserva reservaActualizada = reservaService.actualizarReservaFromDto(id, request);
+            if (reservaActualizada != null) {
+                return ResponseEntity.ok(convertirADto(reservaActualizada));
+            }
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
+    // Eliminar reserva
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminarReserva(@PathVariable Integer id) {
+        try {
+            reservaService.eliminarReserva(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
+    // Obtener reservas por cliente
+    @GetMapping("/cliente/{dni}")
+    public ResponseEntity<List<ReservaDto>> obtenerReservasPorCliente(@PathVariable String dni) {
+        List<Reserva> reservas = reservaService.buscarReservasPorCliente(dni);
+        List<ReservaDto> response = reservas.stream().map(this::convertirADto).toList();
+        return ResponseEntity.ok(response);
+    }
+
+    // Obtener reservas por estado
+    @GetMapping("/estado/{estado}")
+    public ResponseEntity<List<ReservaDto>> obtenerReservasPorEstado(@PathVariable EstadoReserva estado) {
+        List<Reserva> reservas = reservaService.buscarPorEstadoReserva(estado);
+        List<ReservaDto> response = reservas.stream().map(this::convertirADto).toList();
+        return ResponseEntity.ok(response);
+    }
+
+    // Obtener reservas por rango de fechas
+    @GetMapping("/fechas")
+    public ResponseEntity<List<ReservaDto>> obtenerReservasPorFecha(
+            @RequestParam Date fechaInicio,
+            @RequestParam Date fechaFin) {
+        List<Reserva> reservas = reservaService.buscarReservasPorRangoFecha(fechaInicio, fechaFin);
+        List<ReservaDto> response = reservas.stream().map(this::convertirADto).toList();
+        return ResponseEntity.ok(response);
+    }
+
+    // Actualizar estado de reserva
+    @PatchMapping("/{id}/estado-reserva")
+    public ResponseEntity<Void> actualizarEstadoReserva(@PathVariable Integer id, @RequestParam EstadoReserva estado) {
+        try {
+            reservaService.actualizarEstadoReserva(id, estado);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
+    // Actualizar estado de pago
+    @PatchMapping("/{id}/estado-pago")
+    public ResponseEntity<Void> actualizarEstadoPago(@PathVariable Integer id, @RequestParam EstadoPago estado) {
+        try {
+            reservaService.actualizarEstadoPago(id, estado);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
+    // Contar reservas por cliente
+    @GetMapping("/cliente/{dni}/count")
+    public ResponseEntity<Long> contarReservasCliente(@PathVariable String dni) {
+        Long count = reservaService.contarReservasPorCliente(dni);
+        return ResponseEntity.ok(count);
+    }
+
+    // Calcular total pagado por cliente
+    @GetMapping("/cliente/{dni}/total-pagado")
+    public ResponseEntity<BigDecimal> calcularTotalPagadoCliente(@PathVariable String dni) {
+        BigDecimal total = reservaService.calcularTotalPagadoPorCliente(dni);
+        return ResponseEntity.ok(total);
+    }
+
+    // Cancelar reserva
+    @PatchMapping("/{id}/cancelar")
+    public ResponseEntity<Void> cancelarReserva(@PathVariable Integer id) {
+        boolean cancelado = reservaService.cancelarReserva(id);
+        if (cancelado) {
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    // Confirmar reserva
+    @PatchMapping("/{id}/confirmar")
+    public ResponseEntity<Void> confirmarReserva(@PathVariable Integer id) {
+        boolean confirmado = reservaService.confirmarReserva(id);
+        if (confirmado) {
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    // Completar reserva
+    @PatchMapping("/{id}/completar")
+    public ResponseEntity<Void> completarReserva(@PathVariable Integer id) {
+        boolean completado = reservaService.completarReserva(id);
+        if (completado) {
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    // Método auxiliar para convertir a DTO
+    private ReservaDto convertirADto(Reserva reserva) {
+        ReservaDto dto = new ReservaDto();
+        dto.setId(reserva.getId());
+        dto.setDniCliente(reserva.getCliente().getDni());
+        dto.setNombreCliente(reserva.getCliente().getNombre() + " " + reserva.getCliente().getApellidos());
+        dto.setCodigoBicicleta(reserva.getBicicleta().getCodigoBicicleta());
+        dto.setNombreModeloBicicleta(reserva.getBicicleta().getNombreModelo());
+        dto.setFechaReserva(reserva.getFechaReserva());
+        dto.setHoraReserva(reserva.getHoraReserva());
+        dto.setDuracionHoras(reserva.getDuracionHoras());
+        dto.setPrecioTotal(reserva.getPrecioTotal());
+        dto.setEstadoReserva(reserva.getEstadoReserva());
+        dto.setEstadoPago(reserva.getEstadoPago());
+        dto.setFechaRegistro(reserva.getFechaRegistro());
+        return dto;
     }
 }

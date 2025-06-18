@@ -11,8 +11,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.empresa.bicicleta.dto.ReservaRequest;
 import com.empresa.bicicleta.model.Reserva;
 import com.empresa.bicicleta.model.Bicicleta;
+import com.empresa.bicicleta.model.Cliente;
 import com.empresa.bicicleta.repository.ReservaRepository;
 import com.empresa.bicicleta.enums.EstadoPago;
 import com.empresa.bicicleta.enums.EstadoReserva;
@@ -21,8 +23,15 @@ import com.empresa.bicicleta.enums.EstadoReserva;
 @Transactional
 public class ReservaService {
 
+
     @Autowired
     private ReservaRepository reservaRepository;
+
+    @Autowired
+    private BicicletaService bicicletaService;
+
+    @Autowired
+    private ClienteService clienteService;
 
     // Crear reserva
     public Reserva crearReserva(Reserva reserva) {
@@ -244,6 +253,69 @@ public class ReservaService {
             return true;
         }
         return false;
+    }
+
+    // Crear reserva desde DTO
+    public Reserva crearReservaFromDto(ReservaRequest request) {
+        Reserva reserva = new Reserva();
+        
+        // Buscar cliente
+        Cliente cliente = clienteService.buscarPorDni(request.getDniCliente())
+            .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+        
+        // Buscar bicicleta
+        Bicicleta bicicleta = bicicletaService.buscarPorCodigo(request.getCodigoBicicleta())
+            .orElseThrow(() -> new RuntimeException("Bicicleta no encontrada"));
+        
+        // Verificar disponibilidad
+        if (!verificarDisponibilidadBicicleta(request.getCodigoBicicleta(), 
+                                             request.getFechaReserva(), 
+                                             request.getHoraReserva(), 
+                                             request.getDuracionHoras())) {
+            throw new RuntimeException("Bicicleta no disponible en la fecha y hora solicitada");
+        }
+        
+        reserva.setCliente(cliente);
+        reserva.setBicicleta(bicicleta);
+        reserva.setFechaReserva(request.getFechaReserva());
+        reserva.setHoraReserva(request.getHoraReserva());
+        reserva.setDuracionHoras(request.getDuracionHoras());
+        reserva.setPrecioTotal(request.getPrecioTotal());
+        
+        return crearReserva(reserva);
+    }
+
+    // Actualizar reserva desde DTO
+    public Reserva actualizarReservaFromDto(Integer idReserva, ReservaRequest request) {
+        Optional<Reserva> reservaOpt = reservaRepository.findById(idReserva);
+        if (!reservaOpt.isPresent()) {
+            return null;
+        }
+        
+        Reserva reserva = reservaOpt.get();
+        
+        // Buscar cliente si cambió
+        if (!reserva.getCliente().getDni().equals(request.getDniCliente())) {
+            Cliente cliente = clienteService.buscarPorDni(request.getDniCliente())
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+            reserva.setCliente(cliente);
+        }
+        
+        // Buscar bicicleta si cambió
+        if (!reserva.getBicicleta().getCodigoBicicleta().equals(request.getCodigoBicicleta())) {
+            Bicicleta bicicleta = bicicletaService.buscarPorCodigo(request.getCodigoBicicleta())
+                .orElseThrow(() -> new RuntimeException("Bicicleta no encontrada"));
+            reserva.setBicicleta(bicicleta);
+        }
+        
+        reserva.setFechaReserva(request.getFechaReserva());
+        reserva.setHoraReserva(request.getHoraReserva());
+        reserva.setDuracionHoras(request.getDuracionHoras());
+        reserva.setPrecioTotal(request.getPrecioTotal());
+        reserva.setEstadoReserva(request.getEstadoReserva());
+        reserva.setEstadoPago(request.getEstadoPago());
+        
+        return reservaRepository.save(reserva);
     }
 
 }
