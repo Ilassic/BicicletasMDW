@@ -264,7 +264,7 @@ public class ReservaService {
             .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
         
         // Buscar bicicleta
-        Bicicleta bicicleta = bicicletaService.buscarPorCodigo(request.getCodigoBicicleta())
+        Bicicleta bicicleta = bicicletaService.buscarPorId(request.getCodigoBicicleta())
             .orElseThrow(() -> new RuntimeException("Bicicleta no encontrada"));
         
         // Verificar disponibilidad
@@ -303,7 +303,7 @@ public class ReservaService {
         
         // Buscar bicicleta si cambió
         if (!reserva.getBicicleta().getCodigoBicicleta().equals(request.getCodigoBicicleta())) {
-            Bicicleta bicicleta = bicicletaService.buscarPorCodigo(request.getCodigoBicicleta())
+            Bicicleta bicicleta = bicicletaService.buscarPorId(request.getCodigoBicicleta())
                 .orElseThrow(() -> new RuntimeException("Bicicleta no encontrada"));
             reserva.setBicicleta(bicicleta);
         }

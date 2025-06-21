@@ -1,6 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-
-    // Variables de sesión (se inicializarán desde el HTML con Thymeleaf)
     window.userData = window.userData || {
         loggedIn: false,
         nombre: '',
@@ -9,7 +7,6 @@ document.addEventListener('DOMContentLoaded', function() {
         email: '',
         telefono: ''
     };
-
     // Función para cerrar sesión
     window.cerrarSesion = function() {
         if (confirm('¿Está seguro que desea cerrar sesión?')) {

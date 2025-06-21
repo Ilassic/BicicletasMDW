@@ -15,9 +15,16 @@
 
 .formulario-container .descripcion {
   text-align: center;
-  font-size: 1.3rem;
-  font-weight: 640;
+  font-size: 1.5rem;
+  font-weight: 680;
   margin-bottom: 2rem;
+  color: #2c2c2c;
+}
+
+.formulario-container .usuario-info {
+  font-size: 1.4rem;
+  margin-bottom: 3rem;
+  font-weight: 520;
   color: #2c2c2c;
 }
 

@@ -64,10 +64,10 @@ public class BicicletaService {
     }
 
     // Buscar bicicleta por código
-    public Optional<Bicicleta> buscarPorCodigo(String codigoBicicleta) {
+    public Optional<Bicicleta> buscarPorId(String codigoBicicleta) {
         return bicicletaRepository.findById(codigoBicicleta);
     }
-
+    
     // Buscar por marca
     public List<Bicicleta> buscarPorMarca(String marca) {
         return bicicletaRepository.findByMarcaIgnoreCaseOrderByNombreModeloAsc(marca);

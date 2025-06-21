@@ -18,7 +18,7 @@
                 <li><a th:href="@{/}">Inicio</a></li>
                 <li><a th:href="@{/modelos}">Modelos de Bicicletas</a></li>
                 <li><a th:href="@{/reservas-bicicletas}">Reserva tu bicicleta</a></li>
-                <li><a th:href="@{/mi-historial}">Historial de tualquileres</a></li>
+                <li><a th:href="@{/mi-historial}">Historial de sus alquileres</a></li>
                 <li th:if="${loggedIn}"><a th:text="${nombre != null ? nombre + ' ' + (apellidos != null ? apellidos : '') : ''}"></a></li>
                 <li th:if="${loggedIn}"><a href="#" onclick="cerrarSesion()">Cerrar Sesión</a></li>
                 <li th:unless="${loggedIn}"><a th:href="@{/logeo}">Iniciar Sesión</a></li>
@@ -32,7 +32,7 @@
             <p class="descripcion">Rellena el siguiente formulario para alquilar o reservar tu bicicleta. Es sencillo y todos los campos son requeridos.</p>
             <div th:if="${loggedIn}" class="usuario-info">
                 <p><strong>Bienvenido/a:</strong> <span th:text="${nombre}"></span> <span th:text="${apellidos}"></span></p>
-                <p><small>Los datos se han rellenado automáticamente con tu información de perfil</small></p>
+                <p>Los datos se han rellenado automáticamente con la información de su perfil.</p>
             </div>
             
             <form id="reservaForm" class="formulario-reserva">
